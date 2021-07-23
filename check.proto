@@ -1,0 +1,12 @@
+syntax = "proto3";
+package check_go;
+
+option go_package = "./check_go";
+
+message download_check {
+	uint64 max_amount = 1;
+	uint64 node_nonce = 2;
+	string from = 3;
+	string to = 4;
+	string token_address = 5;
+}

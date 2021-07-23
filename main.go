@@ -20,6 +20,10 @@ import (
 
 	golog "github.com/ipfs/go-log/v2"
 	ma "github.com/multiformats/go-multiaddr"
+
+	"github.com/golang/protobuf/proto"
+
+	pb "github.com/rockiecn/p2pdemo/check_go"
 )
 
 func main() {
@@ -33,10 +37,10 @@ func main() {
 
 	// Parse options from the command line
 	listenF := flag.Int("l", 0, "wait for incoming connections")
-	targetF := flag.String("d", "", "target peer to dial")
+	//targetF := flag.String("d", "", "target peer to dial")
 	insecureF := flag.Bool("insecure", false, "use an unencrypted connection")
 	seedF := flag.Int64("seed", 0, "set random seed for id generation")
-	cmdF := flag.String("cmd", "", "cmd to be executed")
+	//cmdF := flag.String("cmd", "", "cmd to be executed")
 	flag.Parse()
 
 	if *listenF == 0 {
@@ -49,10 +53,39 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if *targetF == "" {
-		runListener(ctx, ha, *listenF, *insecureF)
-	} else {
-		runSender(ctx, ha, *targetF, *cmdF)
+	/*
+		if *targetF == "" {
+			log.Println("running listener.")
+			go runListener(ctx, ha, *listenF, *insecureF)
+		} else {
+			runSender(ctx, ha, *targetF, *cmdF)
+		}
+	*/
+
+	// run listener
+	// contact with goroutine
+	lisener_done := make(chan int)
+	sender_done := make(chan int)
+	go runListener(ctx, ha, *listenF, *insecureF, lisener_done)
+	<-lisener_done //wait until runlistener complete
+
+	// commandline
+	for true {
+		fullAddr := getHostAddress(ha)
+		fmt.Printf("\n[ %s ]\n", fullAddr)
+
+		fmt.Printf("\n> ")
+		var strCmd string
+		var strTarget string
+		fmt.Printf("input target and cmd: \n")
+		fmt.Scanf("%s %s", &strTarget, &strCmd)
+		if strTarget == "" || strCmd == "" {
+			fmt.Printf("invalid input, need target and cmd\n")
+			continue
+		}
+		go runSender(ctx, ha, strTarget, strCmd, sender_done)
+		<-sender_done // wait util sender complete
+		//runSender(ctx, ha, *targetF, *cmdF)
 	}
 }
 
@@ -100,14 +133,14 @@ func getHostAddress(ha host.Host) string {
 	return addr.Encapsulate(hostAddr).String()
 }
 
-func runListener(ctx context.Context, ha host.Host, listenPort int, insecure bool) {
-	fullAddr := getHostAddress(ha)
-	log.Printf("I am %s\n", fullAddr)
+func runListener(ctx context.Context, ha host.Host, listenPort int, insecure bool, listener_done chan int) {
+	//fullAddr := getHostAddress(ha)
+	//log.Printf("I am %s\n", fullAddr)
 
 	// Set a stream handler on host A. /echo/1.0.0 is
 	// a user-defined protocol name.
 	ha.SetStreamHandler("/cmd1", func(s network.Stream) {
-		log.Println("listener received cmd1")
+		fmt.Println("listener received stream /cmd1")
 		if err := exeCmd1(s); err != nil {
 			log.Println(err)
 			s.Reset()
@@ -125,21 +158,25 @@ func runListener(ctx context.Context, ha host.Host, listenPort int, insecure boo
 		}
 	})
 
-	log.Println("listening for connections")
+	fmt.Println("listening for connections")
 
-	if insecure {
-		log.Printf("Now run \"./echo -l %d -d %s -insecure -cmd xx\" on a different terminal\n", listenPort+1, fullAddr)
-	} else {
-		log.Printf("Now run \"./echo -l %d -d %s -cmd xx\" on a different terminal\n", listenPort+1, fullAddr)
-	}
+	_ = insecure
+	/*
+		if insecure {
+			log.Printf("Now run \"./p2pdemo -l %d -d %s -insecure -cmd xx\" on a different terminal\n", listenPort+1, fullAddr)
+		} else {
+			log.Printf("Now run \"./p2pdemo -l %d -d %s -cmd xx\" on a different terminal\n", listenPort+1, fullAddr)
+		}
+	*/
+	listener_done <- 0 // signal main to continue
 
 	// Wait until canceled
-	<-ctx.Done()
+	//<-ctx.Done()
 }
 
-func runSender(ctx context.Context, ha host.Host, targetPeer string, cmd string) {
-	fullAddr := getHostAddress(ha)
-	log.Printf("I am %s\n", fullAddr)
+func runSender(ctx context.Context, ha host.Host, targetPeer string, cmd string, sender_done chan int) {
+	//fullAddr := getHostAddress(ha)
+	//fmt.Printf("I am %s\n", fullAddr)
 
 	// The following code extracts target's the peer ID from the
 	// given multiaddress
@@ -170,9 +207,9 @@ func runSender(ctx context.Context, ha host.Host, targetPeer string, cmd string)
 	// so LibP2P knows how to contact it
 	ha.Peerstore().AddAddr(peerid, targetAddr, peerstore.PermanentAddrTTL)
 
-	log.Println("sender opening stream")
+	fmt.Println("sender opening stream")
 
-	log.Printf("cmd: %s\n", cmd)
+	//fmt.Printf("cmd: %s\n", cmd)
 	switch cmd {
 	case "cmd1":
 		s, err := ha.NewStream(context.Background(), peerid, "/cmd1")
@@ -181,20 +218,40 @@ func runSender(ctx context.Context, ha host.Host, targetPeer string, cmd string)
 			return
 		}
 
-		log.Println("send cmd1 param")
+		fmt.Println("send cmd1 param")
 		_, err = s.Write([]byte("param for cmd1\n"))
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		//get result
-		out, err := ioutil.ReadAll(s)
+		/*
+			//get result
+			out, err := ioutil.ReadAll(s)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			log.Printf("cmd1 result: %q\n", out)
+		*/
+
+		// Read data.
+		in, err := ioutil.ReadAll(s)
 		if err != nil {
-			log.Println(err)
-			return
+			log.Fatalln("Error reading :", err)
 		}
-		log.Printf("cmd1 result: %q\n", out)
+		check := &pb.DownloadCheck{}
+		if err := proto.Unmarshal(in, check); err != nil {
+			log.Fatalln("Failed to parse checj:", err)
+		}
+		fmt.Printf("print received struct data:\n")
+		fmt.Printf("->check.MaxAmount: %d\n", check.MaxAmount)
+		fmt.Printf("->check.NodeNonce: %d\n", check.NodeNonce)
+		fmt.Printf("->check.From: %s\n", check.From)
+		fmt.Printf("->check.To: %s\n", check.To)
+		fmt.Printf("->check.TokenAddress: %s\n", check.TokenAddress)
+
+		sender_done <- 0 // signal main to continue
 
 	case "cmd2":
 		s, err := ha.NewStream(context.Background(), peerid, "/cmd2")
@@ -229,10 +286,26 @@ func exeCmd1(s network.Stream) error {
 		return err
 	}
 
-	log.Printf("executing cmd1 with param: %s", str)
+	fmt.Printf("received data: %s", str)
+	fmt.Printf("constructing and sending struct data...\n")
+	// construct data
+	check := &pb.DownloadCheck{}
+	check.MaxAmount = 111111
+	check.NodeNonce = 222222
+	check.From = "aaa"
+	check.To = "bbb"
+	check.TokenAddress = "tokenaddress"
+	// serialize
+	out, err := proto.Marshal(check)
+	if err != nil {
+		log.Fatalln("Failed to encode check:", err)
+	}
 
-	result := "cmd1 execute complete"
-	_, err = s.Write([]byte(result))
+	// send data
+	_, err = s.Write([]byte(out))
+
+	fmt.Printf("\n> ")
+	fmt.Printf("intput target and cmd: \n")
 
 	return err
 }
