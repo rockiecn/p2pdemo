@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"flag"
 	"fmt"
@@ -19,7 +18,8 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	pb "github.com/rockiecn/p2pdemo/check_go"
-	//"github.com/rockiecn/p2pdemo/hostops"
+	"github.com/rockiecn/p2pdemo/execmd"
+	"github.com/rockiecn/p2pdemo/hostops"
 )
 
 func main() {
@@ -44,7 +44,7 @@ func main() {
 	}
 
 	// Make a host that listens on the given multiaddress
-	ha, err := hostops.makeBasicHost(*listenF, *insecureF, *seedF)
+	ha, err := hostops.MakeBasicHost(*listenF, *insecureF, *seedF)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -65,9 +65,9 @@ func main() {
 	go runListener(ctx, ha, *listenF, *insecureF, lisener_done)
 	<-lisener_done //wait until runlistener complete
 
-	// commandline
+	// run commandline
 	for true {
-		fullAddr := hostops.getHostAddress(ha)
+		fullAddr := hostops.GetHostAddress(ha)
 		fmt.Printf("\n[ %s ]\n", fullAddr)
 
 		fmt.Printf("\n> ")
@@ -85,15 +85,14 @@ func main() {
 	}
 }
 
+// set stream handler
 func runListener(ctx context.Context, ha host.Host, listenPort int, insecure bool, listener_done chan int) {
-	//fullAddr := getHostAddress(ha)
-	//log.Printf("I am %s\n", fullAddr)
 
 	// Set a stream handler on host A. /echo/1.0.0 is
 	// a user-defined protocol name.
 	ha.SetStreamHandler("/cmd1", func(s network.Stream) {
 		fmt.Println("listener received stream /cmd1")
-		if err := exeCmd1(s); err != nil {
+		if err := execmd.ExeCmd1(s); err != nil {
 			log.Println(err)
 			s.Reset()
 		} else {
@@ -102,7 +101,7 @@ func runListener(ctx context.Context, ha host.Host, listenPort int, insecure boo
 	})
 	ha.SetStreamHandler("/cmd2", func(s network.Stream) {
 		log.Println("listener received cmd2")
-		if err := exeCmd2(s); err != nil {
+		if err := execmd.ExeCmd2(s); err != nil {
 			log.Println(err)
 			s.Reset()
 		} else {
@@ -119,16 +118,15 @@ func runListener(ctx context.Context, ha host.Host, listenPort int, insecure boo
 		} else {
 			log.Printf("Now run \"./p2pdemo -l %d -d %s -cmd xx\" on a different terminal\n", listenPort+1, fullAddr)
 		}
+
+		// Wait until canceled
+		<-ctx.Done()
 	*/
 	listener_done <- 0 // signal main to continue
-
-	// Wait until canceled
-	//<-ctx.Done()
 }
 
+// open stream to target, with given protocol id
 func runSender(ctx context.Context, ha host.Host, targetPeer string, cmd string, sender_done chan int) {
-	//fullAddr := getHostAddress(ha)
-	//fmt.Printf("I am %s\n", fullAddr)
 
 	// The following code extracts target's the peer ID from the
 	// given multiaddress
@@ -159,7 +157,7 @@ func runSender(ctx context.Context, ha host.Host, targetPeer string, cmd string,
 	// so LibP2P knows how to contact it
 	ha.Peerstore().AddAddr(peerid, targetAddr, peerstore.PermanentAddrTTL)
 
-	fmt.Println("sender opening stream")
+	fmt.Println("opening stream...")
 
 	//fmt.Printf("cmd: %s\n", cmd)
 	switch cmd {
@@ -227,51 +225,4 @@ func runSender(ctx context.Context, ha host.Host, targetPeer string, cmd string,
 		}
 		log.Printf("cmd2 result: %q\n", out)
 	}
-
-}
-
-//
-func exeCmd1(s network.Stream) error {
-	buf := bufio.NewReader(s)
-	str, err := buf.ReadString('\n')
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("received data: %s", str)
-	fmt.Printf("constructing and sending struct data...\n")
-	// construct data
-	check := &pb.DownloadCheck{}
-	check.MaxAmount = 111111
-	check.NodeNonce = 222222
-	check.From = "aaa"
-	check.To = "bbb"
-	check.TokenAddress = "tokenaddress"
-	// serialize
-	out, err := proto.Marshal(check)
-	if err != nil {
-		log.Fatalln("Failed to encode check:", err)
-	}
-
-	// send data
-	_, err = s.Write([]byte(out))
-
-	fmt.Printf("\n> ")
-	fmt.Printf("intput target and cmd: \n")
-
-	return err
-}
-func exeCmd2(s network.Stream) error {
-	buf := bufio.NewReader(s)
-	str, err := buf.ReadString('\n')
-	if err != nil {
-		return err
-	}
-
-	log.Printf("executing cmd2 with param: %s", str)
-
-	result := "cmd2 execute complete"
-	_, err = s.Write([]byte(result))
-
-	return err
 }

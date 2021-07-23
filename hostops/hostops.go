@@ -16,7 +16,7 @@ import (
 
 // makeBasicHost creates a LibP2P host with a random peer ID listening on the
 // given multiaddress. It won't encrypt the connection if insecure is true.
-func makeBasicHost(listenPort int, insecure bool, randseed int64) (host.Host, error) {
+func MakeBasicHost(listenPort int, insecure bool, randseed int64) (host.Host, error) {
 	var r io.Reader
 	if randseed == 0 {
 		r = rand.Reader
@@ -44,7 +44,7 @@ func makeBasicHost(listenPort int, insecure bool, randseed int64) (host.Host, er
 	return libp2p.New(context.Background(), opts...)
 }
 
-func getHostAddress(ha host.Host) string {
+func GetHostAddress(ha host.Host) string {
 	// Build host multiaddress
 	hostAddr, _ := ma.NewMultiaddr(fmt.Sprintf("/ipfs/%s", ha.ID().Pretty()))
 
