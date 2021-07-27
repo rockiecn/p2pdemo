@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/libp2p/go-libp2p-core/network"
-	pb "github.com/rockiecn/p2pdemo/check_go"
+	"github.com/rockiecn/p2pdemo/pb"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -18,40 +18,96 @@ func ExeCmd1(s network.Stream) error {
 		return err
 	}
 
-	fmt.Printf("received data: %s", str)
-	fmt.Printf("constructing and sending struct data...\n")
+	fmt.Printf("Received data: %s", str)
+	fmt.Printf("Constructing and sending struct data...\n")
 	// construct data
-	check := &pb.DownloadCheck{}
-	check.MaxAmount = 111111
-	check.NodeNonce = 222222
-	check.From = "aaa"
-	check.To = "bbb"
-	check.TokenAddress = "tokenaddress"
+	cheque := &pb.DownloadCheque{}
+	cheque.MaxAmount = 111111
+	cheque.NodeNonce = 222222
+	cheque.From = "aaa"
+	cheque.To = "bbb"
+	cheque.TokenAddress = "tokenaddress"
 	// serialize
-	out, err := proto.Marshal(check)
+	out, err := proto.Marshal(cheque)
 	if err != nil {
-		log.Fatalln("Failed to encode check:", err)
+		log.Fatalln("Failed to encode cheque:", err)
 	}
 
 	// send data
 	_, err = s.Write([]byte(out))
 
 	fmt.Printf("\n> ")
-	fmt.Printf("intput target and cmd: \n")
+	fmt.Printf("Intput target address and cmd: \n")
 
 	return err
 }
-func ExeCmd2(s network.Stream) error {
-	buf := bufio.NewReader(s)
-	str, err := buf.ReadString('\n')
+func ExeDownloadCheque(s network.Stream) error {
+
+	//fmt.Printf("Received data: %s", str)
+	fmt.Printf("Constructing and sending download cheque...\n")
+	// construct
+	cheque := &pb.DownloadCheque{}
+	cheque.MaxAmount = 1000
+	cheque.NodeNonce = 1
+	cheque.From = "user address"
+	cheque.To = "storage address"
+	cheque.TokenAddress = "tokenaddress"
+	// serialize
+	out, err := proto.Marshal(cheque)
 	if err != nil {
-		return err
+		log.Fatalln("Failed to encode cheque:", err)
 	}
 
-	log.Printf("executing cmd2 with param: %s", str)
+	fmt.Printf("out: %v\n", out)
 
-	result := "cmd2 execute complete"
-	_, err = s.Write([]byte(result))
+	// send data
+	_, err = s.Write([]byte(out))
+
+	fmt.Printf("\n> ")
+	fmt.Printf("Intput target address and cmd: \n")
 
 	return err
+}
+
+func ExePayCheque(s network.Stream) error {
+
+	// Read data.
+	fmt.Println("In handler ..")
+
+	// test
+	in := make([]byte, 1024)
+	reader := bufio.NewReader(s)
+	n, err := reader.Read(in)
+	if err != nil {
+		fmt.Println("read err: ", err)
+	}
+	//fmt.Println("read n: ", n)
+
+	// get real data
+	if n > 0 {
+		in = in[:n]
+	}
+	fmt.Printf("in: %v", in)
+
+	// // unmarshal data
+	// fmt.Println("unmarshaling data")
+	// pay_cheque := &pb.PayCheque{}
+	// //download_cheque := &pb.DownloadCheque{}
+	// if err := proto.Unmarshal(in, pay_cheque); err != nil {
+	// 	log.Fatalln("Failed to parse check:", err)
+	// 	return err
+	// }
+
+	// fmt.Printf("Print pay cheque:\n")
+	// fmt.Printf("%v", pay_cheque)
+
+	// // ok
+	// reader := bufio.NewReader(s)
+	// in, err := reader.ReadBytes('\n')
+	// if err != nil {
+	// 	return err
+	// }
+	// fmt.Printf("read: %v", in)
+
+	return nil
 }
