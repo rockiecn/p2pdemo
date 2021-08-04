@@ -3,7 +3,7 @@ package pb;
 
 option go_package = "../pb";
 
-message DownloadCheque {
+message Purchase {
 	uint32 max_amount = 1;
 	uint32 node_nonce = 2;
 	string from = 3;
@@ -11,14 +11,14 @@ message DownloadCheque {
 	string token_address = 5;
 }
 
-message PayCheque {
-	DownloadCheque dc = 1;
+message Cheque {
+	Purchase purchase = 1;
 	bytes download_sign = 2; //运营商对download_cheque的签名
 	uint32 pay_amount = 3; //支付给存储节点的数额必须小于等于cheque.max_amount
 	string operator_address = 4; //运营合约地址
 }
 
-message DownloadChequeBatch {
+message ChequeBatch {
 	string cheque_batch_to = 1; //存储节点号
 	uint32 cheque_batch_value = 2; //聚合后的支票面额
 	uint32 min_nonce = 3; //聚合的nonce最小值

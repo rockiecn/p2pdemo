@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -9,6 +10,7 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -17,11 +19,12 @@ import (
 	golog "github.com/ipfs/go-log/v2"
 	ma "github.com/multiformats/go-multiaddr"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/rockiecn/p2pdemo/execmd"
 	"github.com/rockiecn/p2pdemo/hostops"
 	"github.com/rockiecn/p2pdemo/pb"
+	"github.com/rockiecn/test-sig/sig/implement/sigapi"
 )
 
 func main() {
@@ -58,20 +61,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	/*
-		if *targetF == "" {
-			log.Println("running listener.")
-			go runListener(ctx, ha, *listenF, *insecureF)
-		} else {
-			runSender(ctx, ha, *targetF, *cmdF)
-		}
-	*/
-
 	// run listener
 	// contact with goroutine
 	lisener_done := make(chan int)
-	sender_done := make(chan int)
-	//go runListener(ctx, ha, *listenF, *insecureF, lisener_done)
 	go runListener(ctx, ha, port, true, lisener_done)
 	<-lisener_done //wait until runlistener complete
 
@@ -83,18 +75,17 @@ func main() {
 		fullAddr := hostops.GetHostAddress(ha)
 		fmt.Printf("\n[ %s ]\n", fullAddr)
 
-		fmt.Printf("\n> ")
 		var strCmd string
 		var strTarget string
-		fmt.Printf("Input target address and cmd: \n")
+		fmt.Println("\n> Intput target address and cmd: ")
 		fmt.Scanf("%s %s", &strTarget, &strCmd)
 		if strTarget == "" || strCmd == "" {
 			fmt.Printf("invalid input, need target and cmd\n")
 			continue
 		}
-		go runSender(ctx, ha, strTarget, strCmd, sender_done)
-		<-sender_done // wait util sender complete
-		//runSender(ctx, ha, *targetF, *cmdF)
+
+		// call
+		runSender(ctx, ha, strTarget, strCmd)
 	}
 }
 
@@ -104,7 +95,7 @@ func runListener(ctx context.Context, ha host.Host, listenPort int, insecure boo
 	// Set a stream handler on host A. /echo/1.0.0 is
 	// a user-defined protocol name.
 	ha.SetStreamHandler("/cmd1", func(s network.Stream) {
-		fmt.Println("Listener received stream /cmd1")
+		//fmt.Println("Listener received stream /cmd1")
 		if err := execmd.ExeCmd1(s); err != nil {
 			log.Println(err)
 			s.Reset()
@@ -114,8 +105,8 @@ func runListener(ctx context.Context, ha host.Host, listenPort int, insecure boo
 	})
 
 	ha.SetStreamHandler("/1", func(s network.Stream) {
-		//log.Println("Listener received cmd2")
-		if err := execmd.ExeDownloadCheque(s); err != nil {
+		fmt.Println("---> Received command 1")
+		if err := execmd.SendPurchase(s); err != nil {
 			log.Println(err)
 			s.Reset()
 		} else {
@@ -124,16 +115,14 @@ func runListener(ctx context.Context, ha host.Host, listenPort int, insecure boo
 	})
 
 	ha.SetStreamHandler("/2", func(s network.Stream) {
-		log.Println("Listener received 2")
-		if err := execmd.ExePayCheque(s); err != nil {
+		fmt.Println("---> Received command 2")
+		if err := execmd.ReceiveCheque(s); err != nil {
 			log.Println(err)
 			s.Reset()
 		} else {
 			s.Close()
 		}
 	})
-
-	//fmt.Println("listening for connections")
 
 	_ = insecure
 	/*
@@ -150,36 +139,41 @@ func runListener(ctx context.Context, ha host.Host, listenPort int, insecure boo
 }
 
 // open stream to target, with given protocol id
-func runSender(ctx context.Context, ha host.Host, targetPeer string, cmd string, sender_done chan int) {
+func runSender(ctx context.Context, ha host.Host, targetPeer string, cmd string) {
 
-	// The following code extracts target's the peer ID from the
-	// given multiaddress
+	//string to ma
+	// /ip4/127.0.0.1/tcp/10043/p2p/QmZGUdbbgZ4VjKV9FPjc1Em6Hp9eRKfVV6TGWaGY7Fk4MR
 	ipfsaddr, err := ma.NewMultiaddr(targetPeer)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
+	// QmZGUdbbgZ4VjKV9FPjc1Em6Hp9eRKfVV6TGWaGY7Fk4MR
 	pid, err := ipfsaddr.ValueForProtocol(ma.P_IPFS)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
+	// string to peer.ID
+	// QmZGUdbbgZ4VjKV9FPjc1Em6Hp9eRKfVV6TGWaGY7Fk4MR
 	peerid, err := peer.Decode(pid)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	// Decapsulate the /ipfs/<peerID> part from the target
-	// /ip4/<a.b.c.d>/ipfs/<peer> becomes /ip4/<a.b.c.d>
+	// /p2p/QmZGUdbbgZ4VjKV9FPjc1Em6Hp9eRKfVV6TGWaGY7Fk4MR
 	targetPeerAddr, _ := ma.NewMultiaddr(fmt.Sprintf("/ipfs/%s", pid))
+
+	// /ip4/127.0.0.1/tcp/10043
 	targetAddr := ipfsaddr.Decapsulate(targetPeerAddr)
-	// We have a peer ID and a targetAddr so we add it to the peerstore
-	// so LibP2P knows how to contact it
+
+	// add to peerstore: peerID -> targetAddr
 	ha.Peerstore().AddAddr(peerid, targetAddr, peerstore.PermanentAddrTTL)
 
+	// execute command
 	switch cmd {
 	case "cmd1":
 		fmt.Println("Opening stream...")
@@ -204,108 +198,146 @@ func runSender(ctx context.Context, ha host.Host, targetPeer string, cmd string,
 		}
 
 		// unmarshal data
-		download_cheque := &pb.DownloadCheque{}
-		if err := proto.Unmarshal(in, download_cheque); err != nil {
+		purchase := &pb.Purchase{}
+		if err := proto.Unmarshal(in, purchase); err != nil {
 			log.Fatalln("Failed to parse checj:", err)
 		}
 		fmt.Printf("Received struct data:\n")
-		fmt.Printf("->download_cheque.MaxAmount: %d\n", download_cheque.MaxAmount)
-		fmt.Printf("->download_cheque.NodeNonce: %d\n", download_cheque.NodeNonce)
-		fmt.Printf("->download_cheque.From: %s\n", download_cheque.From)
-		fmt.Printf("->download_cheque.To: %s\n", download_cheque.To)
-		fmt.Printf("->download_cheque.TokenAddress: %s\n", download_cheque.TokenAddress)
+		fmt.Printf("->purchase.MaxAmount: %d\n", purchase.MaxAmount)
+		fmt.Printf("->purchase.NodeNonce: %d\n", purchase.NodeNonce)
+		fmt.Printf("->purchase.From: %s\n", purchase.From)
+		fmt.Printf("->purchase.To: %s\n", purchase.To)
+		fmt.Printf("->purchase.TokenAddress: %s\n", purchase.TokenAddress)
 
-		sender_done <- 0 // signal main to continue
+		//sender_done <- 0 // signal main to continue
 
 	// user require download cheque from operator
 	case "1":
+		// connect to peer, get stream
 		s, err := ha.NewStream(context.Background(), peerid, "/1")
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		// Read data.
+		// Read from stream
+		fmt.Println("---> user require purchase from operator")
+		time.Sleep(100 * time.Millisecond)
 		in, err := ioutil.ReadAll(s)
 		if err != nil {
 			log.Fatalln("Error reading :", err)
 			return
 		}
 
-		// unmarshal data
-		download_cheque := &pb.DownloadCheque{}
-		if err := proto.Unmarshal(in, download_cheque); err != nil {
-			log.Fatalln("Failed to parse checj:", err)
+		// parse data
+		var sigByte = in[:65]
+		var purchase_marshaled = in[65:]
+
+		fmt.Printf("sigByte len:%d\n", len(sigByte)) //65
+		//fmt.Printf("skByte len:%d\n", len(skByte))                         //64
+		fmt.Printf("purchase_marshaled len:%d\n", len(purchase_marshaled)) //50
+
+		// unmarshal
+		purchase := &pb.Purchase{}
+		if err := proto.Unmarshal(purchase_marshaled, purchase); err != nil {
+			log.Fatalln("Failed to parse check:", err)
 		}
-		fmt.Printf("Received download cheque:\n")
-		fmt.Printf("->download_cheque.MaxAmount: %d\n", download_cheque.MaxAmount)
-		fmt.Printf("->download_cheque.NodeNonce: %d\n", download_cheque.NodeNonce)
-		fmt.Printf("->download_cheque.From: %s\n", download_cheque.From)
-		fmt.Printf("->download_cheque.To: %s\n", download_cheque.To)
-		fmt.Printf("->download_cheque.TokenAddress: %s\n", download_cheque.TokenAddress)
+		fmt.Printf("---> Received purchase:\n")
+		time.Sleep(100 * time.Millisecond)
+		fmt.Println("--------------------- purchase ---------------------")
+		time.Sleep(100 * time.Millisecond)
+		fmt.Printf("->purchase.MaxAmount: %d\n", purchase.MaxAmount)
+		time.Sleep(100 * time.Millisecond)
+		fmt.Printf("->purchase.NodeNonce: %d\n", purchase.NodeNonce)
+		time.Sleep(100 * time.Millisecond)
+		fmt.Printf("->purchase.From: %s\n", purchase.From)
+		time.Sleep(100 * time.Millisecond)
+		fmt.Printf("->purchase.To: %s\n", purchase.To)
+		time.Sleep(100 * time.Millisecond)
+		fmt.Printf("->purchase.TokenAddress: %s\n", purchase.TokenAddress)
+		time.Sleep(100 * time.Millisecond)
+		fmt.Println("----------------------------------------------------")
+		time.Sleep(100 * time.Millisecond)
 
-		sender_done <- 0 // signal main to continue
+		// verify signature of purchase
+		//var fromAddr = "9e0153496067c20943724b79515472195a7aedaa"
+		// get from address
+		fromAddrByte, err := hex.DecodeString(purchase.From)
+		if err != nil {
+			panic("decode error")
+		}
+		// []byte to common.Address
+		fromAddress := common.BytesToAddress(fromAddrByte)
 
-	// send pay cheque to storage
+		// verify
+		ok, _ := sigapi.Verify(purchase_marshaled, sigByte, fromAddress)
+		if ok {
+			fmt.Println("signature of purchase verify success")
+		} else {
+			fmt.Println("signature of purchase verify failed")
+			return
+		}
+	// user send pay cheque to storage
 	case "2":
-		fmt.Println("cmd 2")
 		fmt.Println("Opening stream to peerID: ", peerid)
+		time.Sleep(100 * time.Millisecond)
 		s, err := ha.NewStream(context.Background(), peerid, "/2")
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
-		/*
-			// construct download cheque
-			dc := &pb.DownloadCheque{}
-			dc.MaxAmount = 1000
-			dc.NodeNonce = 1
-			dc.From = "user address"
-			dc.To = "storage address"
-			dc.TokenAddress = "tokenaddress"
+		// construct download cheque
+		purchase := &pb.Purchase{}
+		purchase.MaxAmount = 1000
+		purchase.NodeNonce = 1
+		purchase.From = "user address"
+		purchase.To = "storage address"
+		purchase.TokenAddress = "tokenaddress"
 
-			// construct pay cheque
-			pc := &pb.PayCheque{}
-			pc.Dc = dc
-			byteArr := []byte("download sign")
-			pc.DownloadSign = byteArr
-			pc.PayAmount = 100
-			pc.OperatorAddress = "operator address"
+		// construct pay cheque
+		cheque := &pb.Cheque{}
+		cheque.Purchase = purchase
+		byteArr := []byte("download sign")
+		cheque.DownloadSign = byteArr
+		cheque.PayAmount = 100
+		cheque.OperatorAddress = "operator address"
 
-			// serialize
-			out, err := proto.Marshal(pc)
-			if err != nil {
-				log.Fatalln("Failed to encode cheque:", err)
-			}
-			out = append(out, '\n')
-			fmt.Printf("out: %v\n", out)
+		// serialize
+		out, err := proto.Marshal(cheque)
+		if err != nil {
+			log.Fatalln("Failed to encode cheque:", err)
+		}
+		//fmt.Printf("out: %v\n", out)
 
-			// send pay cheque
-			fmt.Println("sending out to stream")
-			_, err = s.Write(out)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-		*/
-
-		log.Println("sender saying hello")
-		out := []byte{'a', 'b', 'c'}
-		_, err = s.Write([]byte(out))
-		//_, err = s.Write([]byte("Hello, world!\n"))
+		// send pay cheque
+		fmt.Println("---> user sending cheque to storage")
+		time.Sleep(100 * time.Millisecond)
+		_, err = s.Write(out)
 		if err != nil {
 			log.Println(err)
 			return
 		}
+		s.Close()
 
-		sender_done <- 0 // signal main to continue
+		// // test
+		// log.Println("sender saying hello")
+		// _, err = s.Write([]byte("Hello, world!\n"))
+		// if err != nil {
+		// 	log.Println(err)
+		// 	return
+		// }
+		// s.Close()
+
+		//sender_done <- 0 // signal main to continue
 	}
 }
 
+// print command menu
 func printMenu() {
-	fmt.Println("\n----------------Menu-----------------\n")
-	fmt.Println("1. require download cheque from operator\n")
-	fmt.Println("2. send pay cheque to storage\n")
-	fmt.Println("-------------------------------------\n")
+	fmt.Println()
+	fmt.Println("======================= Menu =======================")
+	fmt.Println("cmd 1: require download cheque from operator")
+	fmt.Println("cmd 2: send pay cheque to storage")
+	fmt.Println("====================================================")
 }
