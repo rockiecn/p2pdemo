@@ -4,18 +4,23 @@ package pb;
 option go_package = "../pb";
 
 message Purchase {
-	uint32 max_amount = 1;
-	uint32 node_nonce = 2;
-	string from = 3;
-	string to = 4;
-	string token_address = 5;
+	string operator_address = 1; // operator
+	string user_address = 2;	// user
+	string token_address = 3;	// token
+
+	uint32 purchase_amount = 4;
+	uint32 node_nonce = 5;
 }
 
 message Cheque {
 	Purchase purchase = 1;
-	bytes download_sign = 2; //运营商对download_cheque的签名
-	uint32 pay_amount = 3; //支付给存储节点的数额必须小于等于cheque.max_amount
-	string operator_address = 4; //运营合约地址
+	bytes purchase_sig = 2; //运营商对purchase的签名
+
+	string cash_address = 3; //运营合约地址
+	string user_address = 4; //user地址
+	string storage_address = 5; //storage
+
+	uint32 pay_amount = 6; //支付给存储节点的数额必须小于等于cheque.max_amount
 }
 
 message ChequeBatch {
