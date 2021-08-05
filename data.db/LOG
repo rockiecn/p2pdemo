@@ -324,3 +324,26 @@
 09:59:48.993510 table@compaction L0·5 -> L1·1 S·1KiB Q·52
 09:59:48.994880 db@close closing
 09:59:48.995591 db@close done T·709.734µs
+=============== Aug 5, 2021 (CST) ===============
+10:36:49.024484 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+10:36:49.024859 version@stat F·[5 1] S·1KiB[1KiB 337B] Sc·[1.25 0.00]
+10:36:49.024876 db@open opening
+10:36:49.024928 journal@recovery F·1
+10:36:49.025474 journal@recovery recovering @68
+10:36:49.027348 version@stat F·[5 1] S·1KiB[1KiB 337B] Sc·[1.25 0.00]
+10:36:49.044772 db@janitor F·8 G·0
+10:36:49.044809 db@open done T·19.917698ms
+10:36:49.044930 db@close closing
+10:36:49.044971 db@close done T·39.954µs
+=============== Aug 5, 2021 (CST) ===============
+10:36:52.356340 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+10:36:52.356485 version@stat F·[5 1] S·1KiB[1KiB 337B] Sc·[1.25 0.00]
+10:36:52.356497 db@open opening
+10:36:52.356552 journal@recovery F·1
+10:36:52.358407 journal@recovery recovering @70
+10:36:52.364361 memdb@flush created L0@72 N·3 S·337B "hav..sed,v53":"pur..sig,v55"
+10:36:52.365875 version@stat F·[6 1] S·2KiB[1KiB 337B] Sc·[1.50 0.00]
+10:36:52.379416 db@janitor F·9 G·0
+10:36:52.379439 db@open done T·22.93689ms
+10:36:52.379584 db@close closing
+10:36:52.379626 db@close done T·41.739µs

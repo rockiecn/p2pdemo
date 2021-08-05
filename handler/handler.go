@@ -2,10 +2,8 @@ package handler
 
 import (
 	"encoding/hex"
-	"fmt"
 	"io/ioutil"
 	"log"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/libp2p/go-libp2p-core/network"
@@ -13,12 +11,14 @@ import (
 	"github.com/rockiecn/test-sig/sig/implement/sigapi"
 	"github.com/rockiecn/test-sig/sig/implement/utils"
 	"google.golang.org/protobuf/proto"
+
+	"github.com/rockiecn/p2pdemo/print"
 )
 
 // command 1 handler, operator send purchase to user
 func Cmd1Handler(s network.Stream) error {
 
-	Println100ms("--> Construct and send purchase...")
+	print.Println100ms("--> Construct and send purchase...")
 
 	// construct purchase
 	Purchase := &pb.Purchase{}
@@ -39,7 +39,7 @@ func Cmd1Handler(s network.Stream) error {
 	}
 
 	// construct purchase message: sig(65 bytes) | data
-	Println100ms("-> constructing msg")
+	print.Println100ms("-> constructing msg")
 
 	// sign purchase by operator
 	var opSkByte = []byte("cb61e1519b560d994e4361b34c181656d916beb68513cff06c37eb7d258bf93d")
@@ -51,14 +51,14 @@ func Cmd1Handler(s network.Stream) error {
 	var msg = []byte{}
 	msg = utils.MergeSlice(sig, purchase_marshaled)
 
-	Println100ms("-> sending msg")
+	print.Println100ms("-> sending msg")
 	// send msg
 	_, err = s.Write([]byte(msg))
 	if err != nil {
 		panic("stream write error")
 	}
 
-	Println100ms("\n> Intput target address and cmd: ")
+	print.Println100ms("\n> Intput target address and cmd: ")
 
 	return err
 }
@@ -107,7 +107,7 @@ func Cmd2Handler(s network.Stream) error {
 	}
 
 	//
-	PrintCheque(cheque)
+	print.PrintCheque(cheque)
 
 	//===== verify signature of cheque(signed by user)
 
@@ -126,47 +126,12 @@ func Cmd2Handler(s network.Stream) error {
 	}
 
 	if ok {
-		Println100ms("<signature of cheque verify success>")
+		print.Println100ms("<signature of cheque verify success>")
 	} else {
-		Println100ms("<signature of cheque verify failed>")
+		print.Println100ms("<signature of cheque verify failed>")
 	}
 
-	Println100ms("\n> Intput target address and cmd: ")
+	print.Println100ms("\n> Intput target address and cmd: ")
 
 	return nil
-}
-
-func PrintPurchase(purchase *pb.Purchase) {
-	Println100ms("------------------ Print Purchase ------------------")
-	Printf100ms("->purchase.PurchaseAmount: %d\n", purchase.PurchaseAmount)
-	Printf100ms("->purchase.NodeNonce: %d\n", purchase.NodeNonce)
-	Printf100ms("->purchase.OperatorAddress: %s\n", purchase.OperatorAddress)
-	Printf100ms("->purchase.UserAddress: %s\n", purchase.UserAddress)
-	Printf100ms("->purchase.TokenAddress: %s\n", purchase.TokenAddress)
-	Println100ms("----------------------------------------------------")
-}
-
-func PrintCheque(cheque *pb.Cheque) {
-	Println100ms("-------------------- Print Cheque ------------------")
-	Printf100ms("->purchase.MaxAmount: %d\n", cheque.Purchase.PurchaseAmount)
-	Printf100ms("->purchase.NodeNonce: %d\n", cheque.Purchase.NodeNonce)
-	Printf100ms("->purchase.OperatorAddress: %s\n", cheque.Purchase.OperatorAddress)
-	Printf100ms("->purchase.UserAddress: %s\n", cheque.Purchase.UserAddress)
-	Printf100ms("->purchase.TokenAddress: %s\n", cheque.Purchase.TokenAddress)
-	Printf100ms("->cheque.PurchaseSig: %x\n", cheque.PurchaseSig)
-	Printf100ms("->cheque.PayAmount: %d\n", cheque.PayAmount)
-	Printf100ms("->cheque.StorageAddress: %s\n", cheque.StorageAddress)
-	Println100ms("----------------------------------------------------")
-}
-
-// println with 100 ms delay
-func Println100ms(str string) {
-	fmt.Println(str)
-	time.Sleep(100 * time.Millisecond)
-}
-
-// printf with 100 ms delay
-func Printf100ms(format string, a ...interface{}) {
-	fmt.Printf(format, a...)
-	time.Sleep(100 * time.Millisecond)
 }
