@@ -300,3 +300,27 @@
 19:37:14.704772 db@open done T·24.58562ms
 19:37:14.704865 db@close closing
 19:37:14.704910 db@close done T·44.219µs
+=============== Aug 5, 2021 (CST) ===============
+09:59:43.554549 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+09:59:43.559567 version@stat F·[4 1] S·1KiB[1KiB 337B] Sc·[1.00 0.00]
+09:59:43.559594 db@open opening
+09:59:43.559652 journal@recovery F·1
+09:59:43.560151 journal@recovery recovering @63
+09:59:43.561697 version@stat F·[4 1] S·1KiB[1KiB 337B] Sc·[1.00 0.00]
+09:59:43.583885 db@janitor F·7 G·0
+09:59:43.583909 db@open done T·24.301896ms
+09:59:43.584028 db@close closing
+09:59:43.584220 db@close done T·190.833µs
+=============== Aug 5, 2021 (CST) ===============
+09:59:48.971996 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+09:59:48.972284 version@stat F·[4 1] S·1KiB[1KiB 337B] Sc·[1.00 0.00]
+09:59:48.972296 db@open opening
+09:59:48.972341 journal@recovery F·1
+09:59:48.973950 journal@recovery recovering @65
+09:59:48.977937 memdb@flush created L0@67 N·3 S·337B "hav..sed,v49":"pur..sig,v51"
+09:59:48.979283 version@stat F·[5 1] S·1KiB[1KiB 337B] Sc·[1.25 0.00]
+09:59:48.991956 db@janitor F·8 G·0
+09:59:48.991973 db@open done T·19.672128ms
+09:59:48.993510 table@compaction L0·5 -> L1·1 S·1KiB Q·52
+09:59:48.994880 db@close closing
+09:59:48.995591 db@close done T·709.734µs

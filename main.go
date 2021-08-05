@@ -22,54 +22,39 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/rockiecn/p2pdemo/execmd"
 	"github.com/rockiecn/p2pdemo/hostops"
 	"github.com/rockiecn/p2pdemo/pb"
 	"github.com/rockiecn/test-sig/sig/implement/sigapi"
 	"github.com/rockiecn/test-sig/sig/implement/utils"
-)
 
-var userSkByte = []byte("b91c265cabae210642d66f9d59137eac2fab2674f4c1c88df3b8e9e6c1f74f9f")
+	"github.com/rockiecn/p2pdemo/handler"
+)
 
 //
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// LibP2P code uses golog to log messages. They log with different
-	// string IDs (i.e. "swarm"). We can control the verbosity level for
-	// all loggers with:
-	golog.SetAllLoggers(golog.LevelInfo) // Change to INFO for extra info
+	// Change to INFO for extra info
+	golog.SetAllLoggers(golog.LevelInfo)
 
 	// Parse options from the command line
-	//listenF := flag.Int("l", 0, "wait for incoming connections")
-	//targetF := flag.String("d", "", "target peer to dial")
-	//insecureF := flag.Bool("insecure", false, "use an unencrypted connection")
 	seedF := flag.Int64("seed", 0, "set random seed for id generation")
-	//cmdF := flag.String("cmd", "", "cmd to be executed")
 	flag.Parse()
-
-	/*
-		if *listenF == 0 {
-			log.Fatal("Please provide a port to bind on with -l")
-		}
-	*/
 
 	// Choose random ports between 10000-10100
 	rand.Seed(time.Now().UnixNano())
 	port := rand.Intn(500) + 10000
 
 	// Make a host that listens on the given multiaddress
-	//ha, err := hostops.MakeBasicHost(*listenF, *insecureF, *seedF)
 	ha, err := hostops.MakeBasicHost(port, true, *seedF)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// run listener
-	// contact with goroutine
 	lisener_done := make(chan int)
-	go runListener(ctx, ha, port, true, lisener_done)
+	go runListener(ctx, ha, port, lisener_done)
 	<-lisener_done //wait until runlistener complete
 
 	// run commandline
@@ -90,28 +75,17 @@ func main() {
 		}
 
 		// call
-		runSender(ctx, ha, strTarget, strCmd)
+		exeCommand(ctx, ha, strTarget, strCmd)
 	}
 }
 
 // set stream handler
-func runListener(ctx context.Context, ha host.Host, listenPort int, insecure bool, listener_done chan int) {
+func runListener(ctx context.Context, ha host.Host, listenPort int, listener_done chan int) {
 
-	// Set a stream handler on host A. /echo/1.0.0 is
-	// a user-defined protocol name.
-	ha.SetStreamHandler("/cmd1", func(s network.Stream) {
-		//fmt.Println("Listener received stream /cmd1")
-		if err := execmd.ExeCmd1(s); err != nil {
-			log.Println(err)
-			s.Reset()
-		} else {
-			s.Close()
-		}
-	})
-
+	// Set a stream handler on host A.
 	ha.SetStreamHandler("/1", func(s network.Stream) {
 		fmt.Println("--> Received command 1")
-		if err := execmd.SendPurchase(s); err != nil {
+		if err := handler.Cmd1Handler(s); err != nil {
 			log.Println(err)
 			s.Reset()
 		} else {
@@ -121,7 +95,7 @@ func runListener(ctx context.Context, ha host.Host, listenPort int, insecure boo
 
 	ha.SetStreamHandler("/2", func(s network.Stream) {
 		fmt.Println("--> Received command 2")
-		if err := execmd.ReceiveCheque(s); err != nil {
+		if err := handler.Cmd2Handler(s); err != nil {
 			log.Println(err)
 			s.Reset()
 		} else {
@@ -129,24 +103,12 @@ func runListener(ctx context.Context, ha host.Host, listenPort int, insecure boo
 		}
 	})
 
-	_ = insecure
-	/*
-		if insecure {
-			log.Printf("Now run \"./p2pdemo -l %d -d %s -insecure -cmd xx\" on a different terminal\n", listenPort+1, fullAddr)
-		} else {
-			log.Printf("Now run \"./p2pdemo -l %d -d %s -cmd xx\" on a different terminal\n", listenPort+1, fullAddr)
-		}
-
-		// Wait until canceled
-		<-ctx.Done()
-	*/
 	listener_done <- 0 // signal main to continue
 }
 
-// open stream to target, with given protocol id
-func runSender(ctx context.Context, ha host.Host, targetPeer string, cmd string) {
+func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string) {
 
-	//string to ma
+	// string to ma
 	// /ip4/127.0.0.1/tcp/10043/p2p/QmZGUdbbgZ4VjKV9FPjc1Em6Hp9eRKfVV6TGWaGY7Fk4MR
 	ipfsaddr, err := ma.NewMultiaddr(targetPeer)
 	if err != nil {
@@ -178,47 +140,10 @@ func runSender(ctx context.Context, ha host.Host, targetPeer string, cmd string)
 	// add to peerstore: peerID -> targetAddr
 	ha.Peerstore().AddAddr(peerid, targetAddr, peerstore.PermanentAddrTTL)
 
-	// execute command
+	// open stream to target, with given protocol id
 	switch cmd {
-	case "cmd1":
-		fmt.Println("Opening stream...")
-		s, err := ha.NewStream(context.Background(), peerid, "/cmd1")
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		fmt.Println("Send data...")
-		_, err = s.Write([]byte("param for cmd1\n"))
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		// Read data.
-		in, err := ioutil.ReadAll(s)
-		if err != nil {
-			log.Fatalln("Error reading :", err)
-			return
-		}
-
-		// unmarshal data
-		purchase := &pb.Purchase{}
-		if err := proto.Unmarshal(in, purchase); err != nil {
-			log.Fatalln("Failed to parse checj:", err)
-		}
-		fmt.Printf("Received struct data:\n")
-		fmt.Printf("->purchase.PurchaseAmount: %d\n", purchase.PurchaseAmount)
-		fmt.Printf("->purchase.NodeNonce: %d\n", purchase.NodeNonce)
-		fmt.Printf("->purchase.OperatorAddress: %s\n", purchase.OperatorAddress)
-		fmt.Printf("->purchase.UserAddress: %s\n", purchase.UserAddress)
-		fmt.Printf("->purchase.TokenAddress: %s\n", purchase.TokenAddress)
-
-		//sender_done <- 0 // signal main to continue
-
-	// user require download cheque from operator
+	// operator send purchase to user
 	case "1":
-
 		// connect to peer, get stream
 		s, err := ha.NewStream(context.Background(), peerid, "/1")
 		if err != nil {
@@ -250,7 +175,7 @@ func runSender(ctx context.Context, ha host.Host, targetPeer string, cmd string)
 		fmt.Printf("--> Received purchase:\n")
 		time.Sleep(100 * time.Millisecond)
 
-		execmd.PrintPurchase(purchase)
+		handler.PrintPurchase(purchase)
 
 		// verify signature of purchase
 
@@ -355,16 +280,14 @@ func runSender(ctx context.Context, ha host.Host, targetPeer string, cmd string)
 		cheque.PayAmount = 10
 		cheque.StorageAddress = "b213d01542d129806d664248a380db8b12059061"
 
-		//
 		// serialize
 		cheque_marshaled, err := proto.Marshal(cheque)
 		if err != nil {
 			log.Fatalln("Failed to encode cheque:", err)
 		}
 
-		//fmt.Println("cheque_marshaled:", cheque_marshaled)
-
 		// sign cheque
+		var userSkByte = []byte("b91c265cabae210642d66f9d59137eac2fab2674f4c1c88df3b8e9e6c1f74f9f")
 		cheque_sig, err := sigapi.Sign(cheque_marshaled, userSkByte)
 		if err != nil {
 			panic("sign error")
@@ -382,6 +305,8 @@ func runSender(ctx context.Context, ha host.Host, targetPeer string, cmd string)
 			log.Println(err)
 			return
 		}
+
+		// close stream for reader to continue
 		s.Close()
 
 	}
