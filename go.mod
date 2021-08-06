@@ -11,6 +11,7 @@ require (
 	github.com/libp2p/go-libp2p-core v0.8.6
 	github.com/libp2p/go-libp2p-crypto v0.1.0
 	github.com/multiformats/go-multiaddr v0.3.3
+	github.com/rockiecn/interact v0.9.5
 	github.com/rockiecn/test-sig/sig/implement/sigapi v0.0.0-20210804030239-459bb99be8d6
 	github.com/rockiecn/test-sig/sig/implement/utils v0.0.0-20210803085054-e8aacbc83a27
 	github.com/syndtr/goleveldb v1.0.1-0.20210305035536-64b5b1c73954

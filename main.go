@@ -29,17 +29,22 @@ import (
 
 	"github.com/rockiecn/p2pdemo/handler"
 	"github.com/rockiecn/p2pdemo/print"
+
+	"github.com/rockiecn/interact/callcash"
+	"github.com/rockiecn/interact/callstorage"
 )
 
+// package level variable
 var (
-	ctx_chan = make(chan context.Context)
-	ha_chan  = make(chan host.Host)
+	Ctx    context.Context
+	Ha     host.Host
+	Cancel context.CancelFunc
 )
 
 // run listener
 func init() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	Ctx, Cancel = context.WithCancel(context.Background())
+	defer Cancel()
 
 	// Change to INFO for extra info
 	golog.SetAllLoggers(golog.LevelInfo)
@@ -53,35 +58,26 @@ func init() {
 	port := rand.Intn(500) + 10000
 
 	// Make a host that listens on the given multiaddress
-	ha, err := hostops.MakeBasicHost(port, true, *seedF)
+	var err error
+	Ha, err = hostops.MakeBasicHost(port, true, *seedF)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// share ctx and ha with main
-	go func() {
-		ctx_chan <- ctx
-		ha_chan <- ha
-	}()
-
 	// run listener
 	listener_done := make(chan int)
-	go runListener(ctx, ha, port, listener_done)
+	go runListener(Ctx, Ha, port, listener_done)
 	<-listener_done //wait until runlistener complete
 }
 
 //
 func main() {
-	// get ctx and ha from channel
-	ctx := <-ctx_chan
-	ha := <-ha_chan
-
 	// run commandline
 	for {
 		// menu
 		print.PrintMenu()
 
-		fullAddr := hostops.GetHostAddress(ha)
+		fullAddr := hostops.GetHostAddress(Ha)
 		print.Printf100ms("\n[ %s ]\n", fullAddr)
 
 		var strCmd, strTarget string
@@ -93,7 +89,7 @@ func main() {
 		}
 
 		// execute command
-		exeCommand(ctx, ha, strTarget, strCmd)
+		exeCommand(Ctx, Ha, strTarget, strCmd)
 	}
 }
 
@@ -171,7 +167,7 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 		}
 
 		// Read from stream
-		print.Println100ms("--> user require purchase from operator")
+		print.Println100ms("--> user receive purchase from operator")
 		in, err := ioutil.ReadAll(s)
 		if err != nil {
 			log.Fatalln("Error reading :", err)
@@ -182,9 +178,6 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 		var sigByte = in[:65]
 		var purchase_marshaled = in[65:]
 
-		// fmt.Printf("sigByte len:%d\n", len(sigByte))                       //65
-		// fmt.Printf("purchase_marshaled len:%d\n", len(purchase_marshaled)) //
-
 		// unmarshal
 		purchase := &pb.Purchase{}
 		if err := proto.Unmarshal(purchase_marshaled, purchase); err != nil {
@@ -194,9 +187,9 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 
 		print.PrintPurchase(purchase)
 
-		// verify signature of purchase
+		// verify signature of purchase, signed by operator
 
-		// get operator address
+		// string to byte
 		opAddrByte, err := hex.DecodeString(purchase.OperatorAddress)
 		if err != nil {
 			panic("decode error")
@@ -204,7 +197,7 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 		// []byte to common.Address
 		opAddress := common.BytesToAddress(opAddrByte)
 
-		// verify
+		// verify signature
 		ok, _ := sigapi.Verify(purchase_marshaled, sigByte, opAddress)
 		if ok {
 			// create/open db
@@ -236,7 +229,7 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 			return
 		}
 
-	// user send cheque to storage
+	// user send cheque to storage, signed by user
 	case "2":
 		print.Printf100ms("Opening stream to peerID: ", peerid)
 		s, err := ha.NewStream(context.Background(), peerid, "/2")
@@ -256,7 +249,7 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 			log.Fatal("opfen db error")
 		}
 
-		// get have_purchased
+		// read have_purchased flag from db
 		have_purchased, err := db.Get([]byte("have_purchased"), nil)
 		if err != nil {
 			print.Println100ms("db get data error")
@@ -269,18 +262,18 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 			return
 		}
 
-		// get purchase marshaled
+		// read purchase marshaled from db
 		purchase_marshaled, err := db.Get([]byte("purchase_marshaled"), nil)
 		if err != nil {
 			print.Println100ms("db get data error")
 		}
-		// unmarshal it
+		// unmarshal it to get purchase itself
 		purchase := &pb.Purchase{}
 		if err := proto.Unmarshal(purchase_marshaled, purchase); err != nil {
 			log.Fatalln("Failed to parse check:", err)
 		}
 
-		// get purchase siginature
+		// read purchase siginature from db
 		purchase_sig, err := db.Get([]byte("purchase_sig"), nil)
 		if err != nil {
 			print.Println100ms("db get data error")
@@ -289,7 +282,7 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 		// close
 		db.Close()
 
-		// get cheque data
+		// cheque should be created, signed and sent by user
 		cheque := &pb.Cheque{}
 		cheque.Purchase = purchase
 		cheque.PurchaseSig = purchase_sig
@@ -310,8 +303,7 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 		}
 
 		// construct cheque message: sig(65 bytes) | data
-		var cheque_msg = []byte{}
-		cheque_msg = utils.MergeSlice(cheque_sig, cheque_marshaled)
+		cheque_msg := utils.MergeSlice(cheque_sig, cheque_marshaled)
 
 		// send cheque
 		print.Println100ms("--> user sending cheque to storage")
@@ -324,5 +316,14 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 		// close stream for reader to continue
 		s.Close()
 
+	case "3":
+		print.Println100ms("call retrieve")
+		callstorage.CallRetrieve()
+	case "4":
+		print.Println100ms("call deploy cash")
+		callcash.CallDeploy()
+	case "5":
+		print.Println100ms("call applycheque in cash")
+		callcash.CallApplyCheque()
 	}
 }

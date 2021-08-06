@@ -48,5 +48,8 @@ func PrintMenu() {
 	fmt.Println("======================= Menu =======================")
 	fmt.Println("cmd 1: require download cheque from operator")
 	fmt.Println("cmd 2: send pay cheque to storage")
+	fmt.Println("cmd 3: call retrieve in storage")
+	fmt.Println("cmd 4: call deploy cash")
+	fmt.Println("cmd 5: call applycheque in cash")
 	fmt.Println("====================================================")
 }
