@@ -24,12 +24,10 @@ import (
 
 	"github.com/rockiecn/p2pdemo/hostops"
 	"github.com/rockiecn/p2pdemo/pb"
-	"github.com/rockiecn/test-sig/sig/implement/sigapi"
-	"github.com/rockiecn/test-sig/sig/implement/utils"
-
 	"github.com/rockiecn/p2pdemo/handler"
 	"github.com/rockiecn/p2pdemo/print"
-
+	"github.com/rockiecn/test-sig/sig/implement/sigapi"
+	"github.com/rockiecn/test-sig/sig/implement/utils"
 	"github.com/rockiecn/interact/callcash"
 	"github.com/rockiecn/interact/callstorage"
 )
@@ -157,7 +155,7 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 
 	// open stream to target, with given protocol id
 	switch cmd {
-	// operator send purchase to user
+	// operator send purchase to user, signed by operator
 	case "1":
 		// connect to peer, get stream
 		s, err := ha.NewStream(context.Background(), peerid, "/1")
@@ -283,6 +281,8 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 		db.Close()
 
 		// cheque should be created, signed and sent by user
+		
+		// create cheque 
 		cheque := &pb.Cheque{}
 		cheque.Purchase = purchase
 		cheque.PurchaseSig = purchase_sig
