@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	// "github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -64,9 +64,9 @@ func init() {
 	}
 
 	// run listener
-	listener_done := make(chan int)
-	go runListener(Ctx, Ha, port, listener_done)
-	<-listener_done //wait until runlistener complete
+	listenerDone := make(chan int)
+	go runListener(Ctx, Ha, port, listenerDone)
+	<-listenerDone //wait until runlistener complete
 }
 
 //
@@ -93,7 +93,7 @@ func main() {
 }
 
 // set stream handler
-func runListener(ctx context.Context, ha host.Host, listenPort int, listener_done chan int) {
+func runListener(ctx context.Context, ha host.Host, listenPort int, listenerDone chan int) {
 
 	// Set a stream handler on host A.
 	ha.SetStreamHandler("/1", func(s network.Stream) {
@@ -116,7 +116,7 @@ func runListener(ctx context.Context, ha host.Host, listenPort int, listener_don
 		}
 	})
 
-	listener_done <- 0 // signal main to continue
+	listenerDone <- 0 // signal main to continue
 }
 
 // execute command
@@ -175,11 +175,11 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 
 		// parse data
 		var sigByte = in[:65]
-		var purchase_marshaled = in[65:]
+		var purchaseMarshaled = in[65:]
 
 		// unmarshal
 		purchase := &pb.Purchase{}
-		if err := proto.Unmarshal(purchase_marshaled, purchase); err != nil {
+		if err := proto.Unmarshal(purchaseMarshaled, purchase); err != nil {
 			log.Fatalln("Failed to parse check:", err)
 		}
 		print.Printf100ms("--> Received purchase:\n")
@@ -197,7 +197,7 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 		opAddress := common.BytesToAddress(opAddrByte)
 
 		// verify signature
-		ok, _ := sigapi.Verify(purchase_marshaled, sigByte, opAddress)
+		ok, _ := sigapi.Verify(purchaseMarshaled, sigByte, opAddress)
 		if ok {
 			// create/open db
 			db, err := leveldb.OpenFile("./data.db", nil)
@@ -212,7 +212,7 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 				print.Println100ms("db put data error")
 			}
 			// store purchase_marshaled
-			err = db.Put([]byte("purchase_marshaled"), purchase_marshaled, nil)
+			err = db.Put([]byte("purchase_marshaled"), purchaseMarshaled, nil)
 			if err != nil {
 				print.Println100ms("db put data error")
 			}
@@ -230,7 +230,7 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 
 	// user send cheque to storage, signed by user
 	case "2":
-		print.Printf100ms("Opening stream to peerID: ", peerid)
+		print.Printf100ms("Opening stream to peerID: %v\n", peerid)
 		s, err := ha.NewStream(context.Background(), peerid, "/2")
 		if err != nil {
 			log.Println(err)
@@ -249,31 +249,31 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 		}
 
 		// read have_purchased flag from db
-		have_purchased, err := db.Get([]byte("have_purchased"), nil)
+		havePurchased, err := db.Get([]byte("have_purchased"), nil)
 		if err != nil {
 			print.Println100ms("db get data error")
 		}
 
 		// check if purchase acquired
-		hp := utils.Byte2Str(have_purchased)
+		hp := utils.Byte2Str(havePurchased)
 		if hp != "true" {
 			print.Println100ms("not require a purchase, run command 1 to get it.")
 			return
 		}
 
 		// read purchase marshaled from db
-		purchase_marshaled, err := db.Get([]byte("purchase_marshaled"), nil)
+		purchaseMarshaled, err := db.Get([]byte("purchase_marshaled"), nil)
 		if err != nil {
 			print.Println100ms("db get data error")
 		}
 		// unmarshal it to get purchase itself
 		purchase := &pb.Purchase{}
-		if err := proto.Unmarshal(purchase_marshaled, purchase); err != nil {
+		if err := proto.Unmarshal(purchaseMarshaled, purchase); err != nil {
 			log.Fatalln("Failed to parse check:", err)
 		}
 
 		// read purchase siginature from db
-		purchase_sig, err := db.Get([]byte("purchase_sig"), nil)
+		purchaseSig, err := db.Get([]byte("purchase_sig"), nil)
 		if err != nil {
 			print.Println100ms("db get data error")
 		}
@@ -286,38 +286,49 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 		// create cheque
 		cheque := &pb.Cheque{}
 		cheque.Purchase = purchase
-		cheque.PurchaseSig = purchase_sig
+		cheque.PurchaseSig = purchaseSig
 		cheque.PayAmount = 10
 		cheque.StorageAddress = "b213d01542d129806d664248a380db8b12059061"
 
-		// // sign
-		// hash := crypto.Keccak256(utils.IntToBytes(purchase.NodeNonce))
-		// print.Printf100ms("%v", hash)
+		// sign
+		// generate hash: nonce, storage_addr, pay_amount
+		//nonce := purchase.NodeNonce
+		nonce := uint32(0x1234)
+		bufBytes := utils.Uint32ToBytes(nonce)
+		hash := crypto.Keccak256(bufBytes)
+		_ = hash
+		print.Printf100ms("nonce: 0x%x, bufBytes: %x\n", nonce, bufBytes)
+		print.Println100ms("now bytes to uint 32")
+		n2 := utils.BytesToUint32(bufBytes)
+		print.Printf100ms("bufBytes: %x, n2: 0x%x\n ", bufBytes, n2)
 
-		// serialize
-		cheque_marshaled, err := proto.Marshal(cheque)
-		if err != nil {
-			log.Fatalln("Failed to encode cheque:", err)
-		}
+		/*
+			// serialize
+			cheque_marshaled, err := proto.Marshal(cheque)
+			if err != nil {
+				log.Fatalln("Failed to encode cheque:", err)
+			}
+		*/
 
-		// sign cheque
-		var userSkByte = []byte("b91c265cabae210642d66f9d59137eac2fab2674f4c1c88df3b8e9e6c1f74f9f")
-		cheque_sig, err := sigapi.Sign(cheque_marshaled, userSkByte)
-		if err != nil {
-			panic("sign error")
-		}
+		// // sign cheque
+		// var userSkByte = []byte("b91c265cabae210642d66f9d59137eac2fab2674f4c1c88df3b8e9e6c1f74f9f")
+		// cheque_sig, err := sigapi.Sign(cheque_marshaled, userSkByte)
+		// if err != nil {
+		// 	panic("sign error")
+		// }
 
-		// construct cheque message: sig(65 bytes) | data
-		cheque_msg := utils.MergeSlice(cheque_sig, cheque_marshaled)
+		/*
+			// construct cheque message: sig(65 bytes) | data
+			cheque_msg := utils.MergeSlice(cheque_sig, cheque_marshaled)
 
-		// send cheque
-		print.Println100ms("--> user sending cheque to storage")
-		_, err = s.Write(cheque_msg)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
+			// send cheque
+			print.Println100ms("--> user sending cheque to storage")
+			_, err = s.Write(cheque_msg)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+		*/
 		// close stream for reader to continue
 		s.Close()
 
