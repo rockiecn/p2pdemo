@@ -8,8 +8,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/rockiecn/p2pdemo/pb"
-	"github.com/rockiecn/test-sig/sig/implement/sigapi"
-	"github.com/rockiecn/test-sig/sig/implement/utils"
+	"github.com/rockiecn/sigtest/sigapi"
+	"github.com/rockiecn/sigtest/utils"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/rockiecn/p2pdemo/print"

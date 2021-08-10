@@ -506,3 +506,26 @@
 12:33:48.963907 db@open done T·16.639462ms
 12:33:48.963965 db@close closing
 12:33:48.963995 db@close done T·29.372µs
+=============== Aug 10, 2021 (CST) ===============
+14:52:00.608335 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+14:52:00.612367 version@stat F·[2 1] S·1011B[674B 337B] Sc·[0.50 0.00]
+14:52:00.612503 db@open opening
+14:52:00.612589 journal@recovery F·1
+14:52:00.613175 journal@recovery recovering @105
+14:52:00.615611 version@stat F·[2 1] S·1011B[674B 337B] Sc·[0.50 0.00]
+14:52:00.631418 db@janitor F·5 G·0
+14:52:00.631436 db@open done T·18.893077ms
+14:52:00.732996 db@close closing
+14:52:00.733048 db@close done T·51.15µs
+=============== Aug 10, 2021 (CST) ===============
+14:52:07.164537 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+14:52:07.164762 version@stat F·[2 1] S·1011B[674B 337B] Sc·[0.50 0.00]
+14:52:07.164772 db@open opening
+14:52:07.164813 journal@recovery F·1
+14:52:07.165651 journal@recovery recovering @107
+14:52:07.169752 memdb@flush created L0@109 N·3 S·337B "hav..sed,v81":"pur..sig,v83"
+14:52:07.170294 version@stat F·[3 1] S·1KiB[1011B 337B] Sc·[0.75 0.00]
+14:52:07.182088 db@janitor F·6 G·0
+14:52:07.182105 db@open done T·17.328902ms
+14:52:07.183646 db@close closing
+14:52:07.183678 db@close done T·31.481µs

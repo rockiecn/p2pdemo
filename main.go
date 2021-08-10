@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	// "github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -22,14 +23,14 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/rockiecn/p2pdemo/hostops"
-	"github.com/rockiecn/p2pdemo/pb"
-	"github.com/rockiecn/p2pdemo/handler"
-	"github.com/rockiecn/p2pdemo/print"
-	"github.com/rockiecn/test-sig/sig/implement/sigapi"
-	"github.com/rockiecn/test-sig/sig/implement/utils"
 	"github.com/rockiecn/interact/callcash"
 	"github.com/rockiecn/interact/callstorage"
+	"github.com/rockiecn/p2pdemo/handler"
+	"github.com/rockiecn/p2pdemo/hostops"
+	"github.com/rockiecn/p2pdemo/pb"
+	"github.com/rockiecn/p2pdemo/print"
+	"github.com/rockiecn/sigtest/sigapi"
+	"github.com/rockiecn/sigtest/utils"
 )
 
 // package level variable
@@ -281,13 +282,17 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 		db.Close()
 
 		// cheque should be created, signed and sent by user
-		
-		// create cheque 
+
+		// create cheque
 		cheque := &pb.Cheque{}
 		cheque.Purchase = purchase
 		cheque.PurchaseSig = purchase_sig
 		cheque.PayAmount = 10
 		cheque.StorageAddress = "b213d01542d129806d664248a380db8b12059061"
+
+		// // sign
+		// hash := crypto.Keccak256(utils.IntToBytes(purchase.NodeNonce))
+		// print.Printf100ms("%v", hash)
 
 		// serialize
 		cheque_marshaled, err := proto.Marshal(cheque)
