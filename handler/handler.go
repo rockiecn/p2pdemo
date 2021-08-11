@@ -6,13 +6,17 @@ import (
 	"log"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/rockiecn/p2pdemo/pb"
-	"github.com/rockiecn/sigtest/sigapi"
-	"github.com/rockiecn/sigtest/utils"
-	"google.golang.org/protobuf/proto"
-
 	"github.com/rockiecn/p2pdemo/print"
+	"github.com/rockiecn/p2pdemo/sigapi"
+	"github.com/rockiecn/p2pdemo/utils"
+
+	// "github.com/rockiecn/sigtest/sigapi"
+	// "github.com/rockiecn/sigtest/utils"
+
+	"google.golang.org/protobuf/proto"
 )
 
 // command 1 handler, operator send purchase to user
@@ -119,8 +123,18 @@ func Cmd2Handler(s network.Stream) error {
 	// []byte to common.Address
 	userAddress := common.BytesToAddress(userAddrByte)
 
+	// construct hash
+	// nonce := purchase.NodeNonce
+	nonceBytes := utils.Uint32ToBytes(cheque.Purchase.NodeNonce)
+	// storage address
+	storeBytes := []byte(cheque.StorageAddress)
+	// pay amount
+	payBytes := utils.Uint32ToBytes(cheque.PayAmount)
+	// calc hash
+	hash := crypto.Keccak256(nonceBytes, storeBytes, payBytes)
+
 	// verify
-	ok, verErr := sigapi.Verify(cheque_marshaled, sigByte, userAddress)
+	ok, verErr := sigapi.Verify(hash, sigByte, userAddress)
 	if verErr != nil {
 		log.Fatal("verify fatal error occured")
 	}

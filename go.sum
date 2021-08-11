@@ -907,12 +907,6 @@ github.com/rjeczalik/notify v0.9.1 h1:CLCKso/QK1snAlnhNR/CNvNiFU2saUtjV0bx3EwNeC
 github.com/rjeczalik/notify v0.9.1/go.mod h1:rKwnCoCGeuQnwBtTSPL9Dad03Vh2n40ePRrjvIXnJho=
 github.com/rockiecn/interact v0.9.5 h1:gTY5pkpNrjlrQM0rdUAuJU8Zicls3i29LsVUbNY6Bw4=
 github.com/rockiecn/interact v0.9.5/go.mod h1:/xSMS9NJggYnNXpTeXTtJaWD9SiXmXAEH3+YuySlMT4=
-github.com/rockiecn/sigtest v1.0.0 h1:T6e3fBsfLURVdwKPePLEMNSmxXbrCgunrTO9EIdNNw0=
-github.com/rockiecn/sigtest v1.0.0/go.mod h1:fFS4lHf/n22cVQpZLIt/j5mcPZ6s6lUCrP9oS9awueA=
-github.com/rockiecn/sigtest v1.0.1 h1:MGvvb1SQpv7j1Ki9fmEDAE9JQq0+BrsyPcqNvIOGaAg=
-github.com/rockiecn/sigtest v1.0.1/go.mod h1:fFS4lHf/n22cVQpZLIt/j5mcPZ6s6lUCrP9oS9awueA=
-github.com/rockiecn/sigtest v1.0.2 h1:17yLL2uvaJETR7Vtd8XOPm+fYhWTJL0dEF2vREVRh1k=
-github.com/rockiecn/sigtest v1.0.2/go.mod h1:fFS4lHf/n22cVQpZLIt/j5mcPZ6s6lUCrP9oS9awueA=
 github.com/rogpeppe/fastuuid v0.0.0-20150106093220-6724a57986af/go.mod h1:XWv6SoW27p1b0cqNHllgS5HIMJraePCO15w5zCzIWYg=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/rs/cors v1.7.0 h1:+88SsELBHx5r+hZ8TCkggzSstaWNbDvThkVK8H6f9ik=

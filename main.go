@@ -29,8 +29,8 @@ import (
 	"github.com/rockiecn/p2pdemo/hostops"
 	"github.com/rockiecn/p2pdemo/pb"
 	"github.com/rockiecn/p2pdemo/print"
-	"github.com/rockiecn/sigtest/sigapi"
-	"github.com/rockiecn/sigtest/utils"
+	"github.com/rockiecn/p2pdemo/sigapi"
+	"github.com/rockiecn/p2pdemo/utils"
 )
 
 // package level variable
@@ -292,43 +292,42 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 
 		// sign
 		// generate hash: nonce, storage_addr, pay_amount
-		//nonce := purchase.NodeNonce
-		nonce := uint32(0x1234)
-		bufBytes := utils.Uint32ToBytes(nonce)
-		hash := crypto.Keccak256(bufBytes)
-		_ = hash
-		print.Printf100ms("nonce: 0x%x, bufBytes: %x\n", nonce, bufBytes)
-		print.Println100ms("now bytes to uint 32")
-		n2 := utils.BytesToUint32(bufBytes)
-		print.Printf100ms("bufBytes: %x, n2: 0x%x\n ", bufBytes, n2)
+		// nonce := purchase.NodeNonce
+		nonceBytes := utils.Uint32ToBytes(purchase.NodeNonce)
 
-		/*
-			// serialize
-			cheque_marshaled, err := proto.Marshal(cheque)
-			if err != nil {
-				log.Fatalln("Failed to encode cheque:", err)
-			}
-		*/
+		// storage address
+		storeBytes := []byte(cheque.StorageAddress)
 
-		// // sign cheque
-		// var userSkByte = []byte("b91c265cabae210642d66f9d59137eac2fab2674f4c1c88df3b8e9e6c1f74f9f")
-		// cheque_sig, err := sigapi.Sign(cheque_marshaled, userSkByte)
-		// if err != nil {
-		// 	panic("sign error")
-		// }
+		// pay amount
+		payBytes := utils.Uint32ToBytes(cheque.PayAmount)
 
-		/*
-			// construct cheque message: sig(65 bytes) | data
-			cheque_msg := utils.MergeSlice(cheque_sig, cheque_marshaled)
+		// calc hash
+		hash := crypto.Keccak256(nonceBytes, storeBytes, payBytes)
 
-			// send cheque
-			print.Println100ms("--> user sending cheque to storage")
-			_, err = s.Write(cheque_msg)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-		*/
+		// serialize
+		chequeMarshaled, err := proto.Marshal(cheque)
+		if err != nil {
+			log.Fatalln("Failed to encode cheque:", err)
+		}
+
+		// sign cheque
+		var userSkByte = []byte("b91c265cabae210642d66f9d59137eac2fab2674f4c1c88df3b8e9e6c1f74f9f")
+		chequeSig, err := sigapi.Sign(hash, userSkByte)
+		if err != nil {
+			panic("sign error")
+		}
+
+		// construct cheque message: sig(65 bytes) | data
+		chequeMsg := utils.MergeSlice(chequeSig, chequeMarshaled)
+
+		// send cheque
+		print.Println100ms("--> user sending cheque to storage")
+		_, err = s.Write(chequeMsg)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
 		// close stream for reader to continue
 		s.Close()
 
