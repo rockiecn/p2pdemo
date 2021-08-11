@@ -199,13 +199,14 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 		// verify signature
 		ok, _ := sigapi.Verify(purchaseMarshaled, sigByte, opAddress)
 		if ok {
+			print.Println100ms("<signature of purchase verify success>")
+
 			// create/open db
 			db, err := leveldb.OpenFile("./data.db", nil)
 			if err != nil {
 				log.Fatal("opfen db error")
 			}
 
-			print.Println100ms("<signature of purchase verify success>")
 			// store have_purchased
 			err = db.Put([]byte("have_purchased"), []byte("true"), nil)
 			if err != nil {
@@ -317,6 +318,9 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 			panic("sign error")
 		}
 
+		print.Printf100ms("hash: %x\n", hash)
+		print.Printf100ms("signature: %x\n", chequeSig)
+
 		// construct cheque message: sig(65 bytes) | data
 		chequeMsg := utils.MergeSlice(chequeSig, chequeMarshaled)
 
@@ -330,15 +334,55 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 
 		// close stream for reader to continue
 		s.Close()
-
+	// call retrieve method of contract
 	case "3":
 		print.Println100ms("call retrieve")
 		callstorage.CallRetrieve()
+	// call deploy
 	case "4":
 		print.Println100ms("call deploy cash")
 		callcash.CallDeploy()
+
+	// read cheque from db, call contract with params
 	case "5":
 		print.Println100ms("call applycheque in cash")
-		callcash.CallApplyCheque()
+
+		// read cheque from db
+		// create/open db
+		db, err := leveldb.OpenFile("./data.db", nil)
+		if err != nil {
+			log.Fatal("opfen db error")
+		}
+		// get cheque
+		var chequeMarshaled []byte
+		chequeMarshaled, err = db.Get([]byte("cheque"), nil)
+		if err != nil {
+			print.Println100ms("db get data error")
+		}
+		// get cheque signature
+		var chequeSig []byte
+		chequeSig, err = db.Get([]byte("cheque sig"), nil)
+		if err != nil {
+			print.Println100ms("db get data error")
+		}
+		//
+		db.Close()
+
+		// unmarshal data
+		cheque := &pb.Cheque{}
+		if err := proto.Unmarshal(chequeMarshaled, cheque); err != nil {
+			log.Fatalln("Failed to parse check:", err)
+			return
+		}
+
+		// ======== call apply cheque with params
+		// nonce := purchase.NodeNonce
+		nonceBytes := utils.Uint32ToBytes(cheque.Purchase.NodeNonce)
+		// storage address
+		storeBytes := []byte(cheque.StorageAddress)
+		// pay amount
+		payBytes := utils.Uint32ToBytes(cheque.PayAmount)
+		// call contract with params
+		callcash.CallApplyCheque(storeBytes, nonceBytes, payBytes, chequeSig)
 	}
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/rockiecn/p2pdemo/print"
 	"github.com/rockiecn/p2pdemo/sigapi"
 	"github.com/rockiecn/p2pdemo/utils"
+	"github.com/syndtr/goleveldb/leveldb"
 
 	// "github.com/rockiecn/sigtest/sigapi"
 	// "github.com/rockiecn/sigtest/utils"
@@ -19,7 +20,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// command 1 handler, operator send purchase to user
+// Cmd1Handler - command 1 handler, operator send purchase to user
 func Cmd1Handler(s network.Stream) error {
 
 	print.Println100ms("--> Construct and send purchase...")
@@ -37,7 +38,7 @@ func Cmd1Handler(s network.Stream) error {
 	Purchase.TokenAddress = "tokenaddress"
 
 	// serialize
-	purchase_marshaled, err := proto.Marshal(Purchase)
+	purchaseMarshaled, err := proto.Marshal(Purchase)
 	if err != nil {
 		log.Fatalln("Failed to encode cheque:", err)
 	}
@@ -47,13 +48,13 @@ func Cmd1Handler(s network.Stream) error {
 
 	// sign purchase by operator
 	var opSkByte = []byte("cb61e1519b560d994e4361b34c181656d916beb68513cff06c37eb7d258bf93d")
-	sig, err := sigapi.Sign(purchase_marshaled, opSkByte)
+	sig, err := sigapi.Sign(purchaseMarshaled, opSkByte)
 	if err != nil {
 		panic("sign error")
 	}
 
 	var msg = []byte{}
-	msg = utils.MergeSlice(sig, purchase_marshaled)
+	msg = utils.MergeSlice(sig, purchaseMarshaled)
 
 	print.Println100ms("-> sending msg")
 	// send msg
@@ -67,7 +68,7 @@ func Cmd1Handler(s network.Stream) error {
 	return err
 }
 
-// command 2 handler, user send cheque to storage
+// Cmd2Handler - command 2 handler, user send cheque to storage
 func Cmd2Handler(s network.Stream) error {
 
 	// // Read data method 1
@@ -101,11 +102,11 @@ func Cmd2Handler(s network.Stream) error {
 
 	// parse data
 	var sigByte = in[:65]
-	var cheque_marshaled = in[65:]
+	var chequeMarshaled = in[65:]
 
 	// unmarshal data
 	cheque := &pb.Cheque{}
-	if err := proto.Unmarshal(cheque_marshaled, cheque); err != nil {
+	if err := proto.Unmarshal(chequeMarshaled, cheque); err != nil {
 		log.Fatalln("Failed to parse check:", err)
 		return err
 	}
@@ -123,7 +124,7 @@ func Cmd2Handler(s network.Stream) error {
 	// []byte to common.Address
 	userAddress := common.BytesToAddress(userAddrByte)
 
-	// construct hash
+	//================================== construct hash
 	// nonce := purchase.NodeNonce
 	nonceBytes := utils.Uint32ToBytes(cheque.Purchase.NodeNonce)
 	// storage address
@@ -141,6 +142,25 @@ func Cmd2Handler(s network.Stream) error {
 
 	if ok {
 		print.Println100ms("<signature of cheque verify success>")
+
+		// wirte cheque into db
+		// create/open db
+		db, err := leveldb.OpenFile("./data.db", nil)
+		if err != nil {
+			log.Fatal("opfen db error")
+		}
+		// store cheque
+		err = db.Put([]byte("cheque"), chequeMarshaled, nil)
+		if err != nil {
+			print.Println100ms("db put data error")
+		}
+		// store cheque signature
+		err = db.Put([]byte("cheque sig"), sigByte, nil)
+		if err != nil {
+			print.Println100ms("db put data error")
+		}
+
+		db.Close()
 	} else {
 		print.Println100ms("<signature of cheque verify failed>")
 	}

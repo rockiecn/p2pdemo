@@ -10,7 +10,7 @@ import (
 )
 
 // sign msg with privateKey
-func Sign(msg []byte, skByte []byte) (sigRet []byte, err error) {
+func Sign(hash []byte, skByte []byte) (sigRet []byte, err error) {
 
 	// byte to string, then string to ecdsa
 	privateKeyECDSA, err := crypto.HexToECDSA(utils.Byte2Str(skByte))
@@ -20,10 +20,10 @@ func Sign(msg []byte, skByte []byte) (sigRet []byte, err error) {
 	}
 
 	// compute digest
-	digest := crypto.Keccak256Hash(msg)
+	//digest := crypto.Keccak256Hash(msg)
 
 	// sign to bytes
-	sigByte, err := crypto.Sign(digest.Bytes(), privateKeyECDSA)
+	sigByte, err := crypto.Sign(hash, privateKeyECDSA)
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
@@ -37,13 +37,14 @@ func Sign(msg []byte, skByte []byte) (sigRet []byte, err error) {
 }
 
 // verify signature
-func Verify(msg []byte, sigByte []byte, fromAddress common.Address) (ok bool, err error) {
+func Verify(hash []byte, sigByte []byte, fromAddress common.Address) (ok bool, err error) {
 
 	// compute digest
-	digest := crypto.Keccak256Hash(msg)
+	//digest := crypto.Keccak256Hash(msg)
 
 	// signature to public key
-	pubKeyECDSA, err := crypto.SigToPub(digest.Bytes(), sigByte)
+	//pubKeyECDSA, err := crypto.SigToPub(digest.Bytes(), sigByte)
+	pubKeyECDSA, err := crypto.SigToPub(hash, sigByte)
 	if err != nil {
 		log.Println("SigToPub err:", err)
 		return false, err
