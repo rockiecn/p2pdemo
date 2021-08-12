@@ -26,7 +26,7 @@ func Cmd1Handler(s network.Stream) error {
 
 	// construct purchase
 	Purchase := &pb.Purchase{}
-	Purchase.PurchaseAmount = 100
+	Purchase.PurchaseAmount = 100 // purchase 100
 	Purchase.NodeNonce = 1
 
 	Purchase.OperatorAddress = "9e0153496067c20943724b79515472195a7aedaa" // operator
@@ -124,7 +124,7 @@ func Cmd2Handler(s network.Stream) error {
 	userAddress := common.BytesToAddress(userAddrByte)
 
 	// calc hash from cheque
-	hash := utils.CalcHash(cheque.Purchase.NodeNonce, cheque.StorageAddress, cheque.PayAmount)
+	hash := utils.CalcHash(cheque.Purchase.UserAddress, cheque.Purchase.NodeNonce, cheque.StorageAddress, cheque.PayAmount)
 
 	// verify signature: []byte []byte common.Address
 	ok, verErr := sigapi.Verify(hash, sigByte, userAddress)

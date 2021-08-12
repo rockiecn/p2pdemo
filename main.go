@@ -286,7 +286,7 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 		cheque.StorageAddress = "b213d01542d129806d664248a380db8b12059061"
 
 		// calc hash from cheque
-		hash := utils.CalcHash(purchase.NodeNonce, cheque.StorageAddress, cheque.PayAmount)
+		hash := utils.CalcHash(cheque.Purchase.UserAddress, cheque.Purchase.NodeNonce, cheque.StorageAddress, cheque.PayAmount)
 
 		// sign cheque by user' sk
 		// user address: 1ab6a9f2b90004c1269563b5da391250ede3c114
@@ -296,7 +296,12 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 			panic("sign error")
 		}
 
-		//print.Printf100ms("signature: %x\n", chequeSig)
+		// for debug
+		print.Printf100ms("UserAddress: %s\n", cheque.Purchase.UserAddress)
+		print.Printf100ms("NodeNonce: %d\n", cheque.Purchase.NodeNonce)
+		print.Printf100ms("StorageAddress: %s\n", cheque.StorageAddress)
+		print.Printf100ms("PayAmount: %d\n", cheque.PayAmount)
+		print.Printf100ms("signature: %x\n", chequeSig)
 
 		// serialize
 		chequeMarshaled, err := proto.Marshal(cheque)

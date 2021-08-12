@@ -44,19 +44,21 @@ func BytesToUint32(b []byte) uint32 {
 }
 
 // CalcHash - calculate hash from cheque
-func CalcHash(int64Nonce int64, stringAddress string, int64PayAmount int64) []byte {
+func CalcHash(userAddress string, int64Nonce int64, stAddress string, int64PayAmount int64) []byte {
 
+	//
+	userBytes, _ := hex.DecodeString(userAddress)
 	// pad nonce to 32 bytes
 	bigNonce := big.NewInt(int64Nonce)
 	noncePad32 := common.LeftPadBytes(bigNonce.Bytes(), 32)
 
 	// 20 bytes
-	storeBytes, _ := hex.DecodeString(stringAddress)
+	stBytes, _ := hex.DecodeString(stAddress)
 	// pad pay amount to 32 bytes
 	bigPay := big.NewInt(int64PayAmount)
 	payPad32 := common.LeftPadBytes(bigPay.Bytes(), 32)
 
 	// calc hash 32 bytes
-	hash := crypto.Keccak256(noncePad32, storeBytes, payPad32)
+	hash := crypto.Keccak256(userBytes, noncePad32, stBytes, payPad32)
 	return hash
 }
