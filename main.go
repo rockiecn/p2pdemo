@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -238,11 +237,6 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 			return
 		}
 
-		// storage address:
-		// b213d01542d129806d664248a380db8b12059061
-		// storage sk:
-		// aa03c94703e40a3f9e694a002dcb250182970917a7cd2346f2dfd337ada154f5
-
 		// create/open db
 		db, err := leveldb.OpenFile("./data.db", nil)
 		if err != nil {
@@ -291,19 +285,18 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 		cheque.PayAmount = 10
 		cheque.StorageAddress = "b213d01542d129806d664248a380db8b12059061"
 
-		// sign
-		// generate hash: nonce, storage_addr, pay_amount
-		// nonce := purchase.NodeNonce
-		nonceBytes := utils.Uint32ToBytes(purchase.NodeNonce)
+		// calc hash from cheque
+		hash := utils.CalcHash(purchase.NodeNonce, cheque.StorageAddress, cheque.PayAmount)
 
-		// storage address
-		storeBytes := []byte(cheque.StorageAddress)
+		// sign cheque by user' sk
+		// user address: 1ab6a9f2b90004c1269563b5da391250ede3c114
+		var userSkByte = []byte("b91c265cabae210642d66f9d59137eac2fab2674f4c1c88df3b8e9e6c1f74f9f")
+		chequeSig, err := sigapi.Sign(hash, userSkByte)
+		if err != nil {
+			panic("sign error")
+		}
 
-		// pay amount
-		payBytes := utils.Uint32ToBytes(cheque.PayAmount)
-
-		// calc hash
-		hash := crypto.Keccak256(nonceBytes, storeBytes, payBytes)
+		//print.Printf100ms("signature: %x\n", chequeSig)
 
 		// serialize
 		chequeMarshaled, err := proto.Marshal(cheque)
@@ -311,20 +304,10 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 			log.Fatalln("Failed to encode cheque:", err)
 		}
 
-		// sign cheque
-		var userSkByte = []byte("b91c265cabae210642d66f9d59137eac2fab2674f4c1c88df3b8e9e6c1f74f9f")
-		chequeSig, err := sigapi.Sign(hash, userSkByte)
-		if err != nil {
-			panic("sign error")
-		}
-
-		print.Printf100ms("hash: %x\n", hash)
-		print.Printf100ms("signature: %x\n", chequeSig)
-
-		// construct cheque message: sig(65 bytes) | data
+		// construct cheque message: signature(65 bytes) | marshaled cheqe
 		chequeMsg := utils.MergeSlice(chequeSig, chequeMarshaled)
 
-		// send cheque
+		// send cheque msg to storage
 		print.Println100ms("--> user sending cheque to storage")
 		_, err = s.Write(chequeMsg)
 		if err != nil {
@@ -375,14 +358,16 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 			return
 		}
 
-		// ======== call apply cheque with params
-		// nonce := purchase.NodeNonce
-		nonceBytes := utils.Uint32ToBytes(cheque.Purchase.NodeNonce)
-		// storage address
-		storeBytes := []byte(cheque.StorageAddress)
-		// pay amount
-		payBytes := utils.Uint32ToBytes(cheque.PayAmount)
-		// call contract with params
-		callcash.CallApplyCheque(storeBytes, nonceBytes, payBytes, chequeSig)
+		// // ======== call apply cheque with params
+		// // nonce := purchase.NodeNonce
+		// nonceBytes := utils.Uint32ToBytes(cheque.Purchase.NodeNonce)
+		// // storage address
+		// storeBytes := []byte(cheque.StorageAddress)
+		// // pay amount
+		// payBytes := utils.Uint32ToBytes(cheque.PayAmount)
+		// // call contract with params
+		// callcash.CallApplyCheque(storeBytes, nonceBytes, payBytes, chequeSig)
+
+		_ = chequeSig
 	}
 }

@@ -6,7 +6,6 @@ import (
 	"log"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/rockiecn/p2pdemo/pb"
 	"github.com/rockiecn/p2pdemo/print"
@@ -124,17 +123,10 @@ func Cmd2Handler(s network.Stream) error {
 	// []byte to common.Address
 	userAddress := common.BytesToAddress(userAddrByte)
 
-	//================================== construct hash
-	// nonce := purchase.NodeNonce
-	nonceBytes := utils.Uint32ToBytes(cheque.Purchase.NodeNonce)
-	// storage address
-	storeBytes := []byte(cheque.StorageAddress)
-	// pay amount
-	payBytes := utils.Uint32ToBytes(cheque.PayAmount)
-	// calc hash
-	hash := crypto.Keccak256(nonceBytes, storeBytes, payBytes)
+	// calc hash from cheque
+	hash := utils.CalcHash(cheque.Purchase.NodeNonce, cheque.StorageAddress, cheque.PayAmount)
 
-	// verify
+	// verify signature: []byte []byte common.Address
 	ok, verErr := sigapi.Verify(hash, sigByte, userAddress)
 	if verErr != nil {
 		log.Fatal("verify fatal error occured")

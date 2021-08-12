@@ -9,7 +9,7 @@ import (
 	"github.com/rockiecn/p2pdemo/utils"
 )
 
-// sign msg with privateKey
+// Sign msg with privateKey
 func Sign(hash []byte, skByte []byte) (sigRet []byte, err error) {
 
 	// byte to string, then string to ecdsa
@@ -36,7 +36,7 @@ func Sign(hash []byte, skByte []byte) (sigRet []byte, err error) {
 
 }
 
-// verify signature
+// Verify signature
 func Verify(hash []byte, sigByte []byte, fromAddress common.Address) (ok bool, err error) {
 
 	// compute digest

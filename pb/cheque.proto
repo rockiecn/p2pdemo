@@ -8,8 +8,8 @@ message Purchase {
 	string user_address = 2;	// user
 	string token_address = 3;	// token
 
-	uint32 purchase_amount = 4;
-	uint32 node_nonce = 5;
+	int64 purchase_amount = 4;
+	int64 node_nonce = 5;
 }
 
 message Cheque {
@@ -20,12 +20,12 @@ message Cheque {
 	string user_address = 4; //user地址
 	string storage_address = 5; //storage
 
-	uint32 pay_amount = 6; //支付给存储节点的数额必须小于等于cheque.max_amount
+	int64 pay_amount = 6; //支付给存储节点的数额必须小于等于cheque.max_amount
 }
 
 message ChequeBatch {
 	string cheque_batch_to = 1; //存储节点号
-	uint32 cheque_batch_value = 2; //聚合后的支票面额
-	uint32 min_nonce = 3; //聚合的nonce最小值
-	uint32 max_nonce = 4; //聚合的nonce最大值
+	int64 cheque_batch_value = 2; //聚合后的支票面额
+	int64 min_nonce = 3; //聚合的nonce最小值
+	int64 max_nonce = 4; //聚合的nonce最大值
 }
