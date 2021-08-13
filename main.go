@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/big"
 	"math/rand"
 	"time"
 
@@ -22,8 +23,8 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/rockiecn/interact/callcash"
 	"github.com/rockiecn/interact/callstorage"
+	"github.com/rockiecn/p2pdemo/callcash"
 	"github.com/rockiecn/p2pdemo/handler"
 	"github.com/rockiecn/p2pdemo/hostops"
 	"github.com/rockiecn/p2pdemo/pb"
@@ -282,12 +283,12 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 		cheque := &pb.Cheque{}
 		cheque.Purchase = purchase
 		cheque.PurchaseSig = purchaseSig
-		cheque.PayAmount = 10
+		cheque.PayAmount = 10 //wei
 		cheque.StorageAddress = "b213d01542d129806d664248a380db8b12059061"
 
 		// calc hash from cheque
 		hash := utils.CalcHash(cheque.Purchase.UserAddress, cheque.Purchase.NodeNonce, cheque.StorageAddress, cheque.PayAmount)
-
+		print.Printf100ms("hash: %x\n", hash)
 		// sign cheque by user' sk
 		// user address: 1ab6a9f2b90004c1269563b5da391250ede3c114
 		var userSkByte = []byte("b91c265cabae210642d66f9d59137eac2fab2674f4c1c88df3b8e9e6c1f74f9f")
@@ -330,6 +331,7 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 	case "4":
 		print.Println100ms("call deploy cash")
 		callcash.CallDeploy()
+		//callstorage.CallDeploy()
 
 	// read cheque from db, call contract with params
 	case "5":
@@ -365,7 +367,7 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 
 		// // ======== call apply cheque with params
 		// // nonce := purchase.NodeNonce
-		// nonceBytes := utils.Uint32ToBytes(cheque.Purchase.NodeNonce)
+		// nonceBytes := utils.Uint32ToBytes(123)
 		// // storage address
 		// storeBytes := []byte(cheque.StorageAddress)
 		// // pay amount
@@ -373,6 +375,46 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 		// // call contract with params
 		// callcash.CallApplyCheque(storeBytes, nonceBytes, payBytes, chequeSig)
 
-		_ = chequeSig
+		// get user address
+		userAddrByte, err := hex.DecodeString(cheque.Purchase.UserAddress)
+		if err != nil {
+			panic("decode error")
+		}
+		// []byte to common.Address
+		userAddress := common.BytesToAddress(userAddrByte)
+
+		// int to bigInt
+		// nonce big
+		bigN := big.NewInt(cheque.Purchase.NodeNonce)
+
+		// get storage address
+		stAddrBytes, err := hex.DecodeString(cheque.StorageAddress)
+		if err != nil {
+			panic("decode error")
+		}
+		// []byte to common.Address
+		stAddress := common.BytesToAddress(stAddrBytes)
+
+		// pay amount big
+		bigPay := big.NewInt(cheque.PayAmount)
+
+		// // call contract
+		// z18 := new(big.Int)
+		// z18.SetString("1000000000000000000", 10)
+		// weiPay := new(big.Int)
+		// weiPay.Mul(bigPay, z18) // eth to wei
+
+		// fmt.Println("bigPay: ", bigPay.String())
+		// fmt.Println("z18: ", z18.String())
+		// fmt.Println("weiPay: ", weiPay.String())
+
+		//
+		callcash.CallApplyCheque(userAddress, bigN, stAddress, bigPay, chequeSig)
+		// _ = userAddress
+		// _ = bigN
+		// _ = stAddress
+		// _ = weiPay
+		// _ = chequeSig
+
 	}
 }
