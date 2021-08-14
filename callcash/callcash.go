@@ -13,26 +13,18 @@ import (
 
 	"github.com/rockiecn/p2pdemo/cash"
 	"github.com/rockiecn/p2pdemo/clientops"
+	"github.com/rockiecn/p2pdemo/hostops"
 )
 
-// host
-const HOST = "http://localhost:8545"
-
-// ApplyCheque(opts *bind.TransactOpts,
-// 	userAddr common.Address,
-// 	nonce *big.Int,
-// 	stAddr common.Address,
-// 	payAmount *big.Int,
-// 	sign []byte)
-//
+// CallApplyCheque - send tx to contract to call apply cheque method.
 func CallApplyCheque(
 	userAddr common.Address,
 	nonce *big.Int,
 	stAddr common.Address,
 	payAmount *big.Int,
 	sig []byte) error {
-	fmt.Println("HOST: ", HOST)
-	cli, err := clientops.GetClient(HOST)
+	fmt.Println("HOST: ", hostops.HOST)
+	cli, err := clientops.GetClient(hostops.HOST)
 	if err != nil {
 		fmt.Println("failed to dial geth", err)
 		return err
@@ -47,30 +39,23 @@ func CallApplyCheque(
 	}
 
 	// need cash address
-	//cashInstance, err := cash.NewCash(common.HexToAddress("0x77AA1d64C1E85Cc4AF38046FfF5bc35e394f8eAD"), cli)
 	cashInstance, err := cash.NewCash(common.HexToAddress("0x5854e2529F2b6d853afb2a9Da7094A0e6C9eE802"), cli)
 
 	if err != nil {
 		fmt.Println("NewCash err: ", err)
 		return err
-	} else {
-		fmt.Println("NewCash success: ", cashInstance)
 	}
+	fmt.Println("NewCash success: ", cashInstance)
 
-	//
-	//fmt.Printf("n = %s\n", n.String())
+	// fmt.Println("=== in callcash.go")
+	// fmt.Println("auth:", auth)
+	// fmt.Println("userAddr:", userAddr)
+	// fmt.Println("nonce:", nonce)
+	// fmt.Println("stAddr:", stAddr)
+	// fmt.Println("payAmount:", payAmount)
+	// fmt.Printf("sig:\n0x%x\n", sig)
 
-	// address to receive money
-	// toAddress := common.HexToAddress("0xb213d01542d129806d664248a380db8b12059061")
-
-	fmt.Println("=== in callcash.go")
-	fmt.Println("auth:", auth)
-	fmt.Println("userAddr:", userAddr)
-	fmt.Println("nonce:", nonce)
-	fmt.Println("stAddr:", stAddr)
-	fmt.Println("payAmount:", payAmount)
-	fmt.Printf("sig:\n0x%x\n", sig)
-
+	// call send trasaction to contract
 	tx, err := cashInstance.ApplyCheque(auth, userAddr, nonce, stAddr, payAmount, sig)
 	if err != nil {
 		fmt.Println("tx failed :", err)
@@ -82,12 +67,12 @@ func CallApplyCheque(
 	return err
 }
 
-//
+// CallDeploy - deploy cash contract
 func CallDeploy() (common.Address, error) {
 	var cashAddr common.Address
 
-	fmt.Println("HOST: ", HOST)
-	client, err := clientops.GetClient(HOST)
+	fmt.Println("HOST: ", hostops.HOST)
+	client, err := clientops.GetClient(hostops.HOST)
 	if err != nil {
 		fmt.Println("failed to dial geth", err)
 		return cashAddr, err

@@ -14,7 +14,10 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 )
 
-// makeBasicHost creates a LibP2P host with a random peer ID listening on the
+// HOST - the chain host
+const HOST = "http://localhost:8545"
+
+// MakeBasicHost -  creates a LibP2P host with a random peer ID listening on the
 // given multiaddress. It won't encrypt the connection if insecure is true.
 func MakeBasicHost(listenPort int, insecure bool, randseed int64) (host.Host, error) {
 	var r io.Reader

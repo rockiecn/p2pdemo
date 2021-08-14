@@ -400,11 +400,6 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 
 		//
 		callcash.CallApplyCheque(userAddress, bigN, stAddress, bigPay, chequeSig)
-		// _ = userAddress
-		// _ = bigN
-		// _ = stAddress
-		// _ = weiPay
-		// _ = chequeSig
 
 	}
 }

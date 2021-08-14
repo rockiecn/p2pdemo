@@ -15,11 +15,11 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
+
+	"github.com/rockiecn/p2pdemo/hostops"
 )
 
-const HOST = "http://localhost:8545"
-
-//
+// GetClient - dial to chain host
 func GetClient(endPoint string) (*ethclient.Client, error) {
 	rpcClient, err := rpc.Dial(endPoint)
 	if err != nil {
@@ -31,7 +31,7 @@ func GetClient(endPoint string) (*ethclient.Client, error) {
 	return conn, nil
 }
 
-//MakeAuth make the transactOpts to call contract
+// MakeAuth - make a transactOpts to call contract
 func MakeAuth(hexSk string, moneyToContract, nonce, gasPrice *big.Int, gasLimit uint64) (*bind.TransactOpts, error) {
 	auth := &bind.TransactOpts{}
 	sk, err := crypto.HexToECDSA(hexSk)
@@ -48,11 +48,11 @@ func MakeAuth(hexSk string, moneyToContract, nonce, gasPrice *big.Int, gasLimit 
 	return auth, nil
 }
 
-//
+// QueryBalance - query the balance of an account
 func QueryBalance(account string) (*big.Int, error) {
 	var result string
 
-	client, err := rpc.Dial(HOST)
+	client, err := rpc.Dial(hostops.HOST)
 	if err != nil {
 		log.Println("rpc.dial err:", err)
 		return big.NewInt(0), err
@@ -90,7 +90,7 @@ func QueryBalance(account string) (*big.Int, error) {
 	}
 }
 
-//
+// TransferTo - transfer some value to an address
 func TransferTo(value *big.Int, toAddr, eth string) error {
 
 	client, err := ethclient.Dial(eth)
@@ -161,10 +161,8 @@ func TransferTo(value *big.Int, toAddr, eth string) error {
 		log.Println("send transcation failed:", err)
 		return err
 		//continue
-	} else {
-		log.Println("send transaction success")
 	}
-
+	log.Println("send transaction success")
 	/*
 		log.Println("quering balance ...")
 
