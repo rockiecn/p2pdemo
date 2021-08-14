@@ -365,16 +365,6 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 			return
 		}
 
-		// // ======== call apply cheque with params
-		// // nonce := purchase.NodeNonce
-		// nonceBytes := utils.Uint32ToBytes(123)
-		// // storage address
-		// storeBytes := []byte(cheque.StorageAddress)
-		// // pay amount
-		// payBytes := utils.Uint32ToBytes(cheque.PayAmount)
-		// // call contract with params
-		// callcash.CallApplyCheque(storeBytes, nonceBytes, payBytes, chequeSig)
-
 		// get user address
 		userAddrByte, err := hex.DecodeString(cheque.Purchase.UserAddress)
 		if err != nil {

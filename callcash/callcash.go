@@ -48,7 +48,7 @@ func CallApplyCheque(
 
 	// need cash address
 	//cashInstance, err := cash.NewCash(common.HexToAddress("0x77AA1d64C1E85Cc4AF38046FfF5bc35e394f8eAD"), cli)
-	cashInstance, err := cash.NewCash(common.HexToAddress("0x166D67e9eFcbAfe54E7Db5A9a8F5e68E5768B733"), cli)
+	cashInstance, err := cash.NewCash(common.HexToAddress("0x5854e2529F2b6d853afb2a9Da7094A0e6C9eE802"), cli)
 
 	if err != nil {
 		fmt.Println("NewCash err: ", err)
