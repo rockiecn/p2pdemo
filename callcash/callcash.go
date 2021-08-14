@@ -47,13 +47,13 @@ func CallApplyCheque(
 	}
 	fmt.Println("NewCash success: ", cashInstance)
 
-	// fmt.Println("=== in callcash.go")
-	// fmt.Println("auth:", auth)
-	// fmt.Println("userAddr:", userAddr)
-	// fmt.Println("nonce:", nonce)
-	// fmt.Println("stAddr:", stAddr)
-	// fmt.Println("payAmount:", payAmount)
-	// fmt.Printf("sig:\n0x%x\n", sig)
+	fmt.Println("=== in callcash.go")
+	fmt.Println("auth:", auth)
+	fmt.Println("userAddr:", userAddr)
+	fmt.Println("nonce:", nonce)
+	fmt.Println("stAddr:", stAddr)
+	fmt.Println("payAmount:", payAmount)
+	fmt.Printf("sig:\n0x%x\n", sig)
 
 	// call send trasaction to contract
 	tx, err := cashInstance.ApplyCheque(auth, userAddr, nonce, stAddr, payAmount, sig)

@@ -19,7 +19,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// Cmd1Handler - command 1 handler, operator send purchase to user
+// Cmd1Handler - command 1 handler, run on user, receive purchase from operator
 func Cmd1Handler(s network.Stream) error {
 
 	print.Println100ms("--> Construct and send purchase...")
@@ -67,7 +67,7 @@ func Cmd1Handler(s network.Stream) error {
 	return err
 }
 
-// Cmd2Handler - command 2 handler, user send cheque to storage
+// Cmd2Handler - command 2 handler, run on storage, receive cheque from user
 func Cmd2Handler(s network.Stream) error {
 
 	// // Read data method 1
@@ -130,6 +130,7 @@ func Cmd2Handler(s network.Stream) error {
 	ok, verErr := sigapi.Verify(hash, sigByte, userAddress)
 	if verErr != nil {
 		log.Fatal("verify fatal error occured")
+		return verErr
 	}
 
 	if ok {

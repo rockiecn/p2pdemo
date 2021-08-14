@@ -87,7 +87,7 @@ func main() {
 			continue
 		}
 
-		// execute command
+		// execute command with cmd id
 		exeCommand(Ctx, Ha, strTarget, strCmd)
 	}
 }
@@ -129,14 +129,12 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 		log.Println(err)
 		return
 	}
-
 	// QmZGUdbbgZ4VjKV9FPjc1Em6Hp9eRKfVV6TGWaGY7Fk4MR
 	pid, err := ipfsaddr.ValueForProtocol(ma.P_IPFS)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-
 	// string to peer.ID
 	// QmZGUdbbgZ4VjKV9FPjc1Em6Hp9eRKfVV6TGWaGY7Fk4MR
 	peerid, err := peer.Decode(pid)
@@ -144,19 +142,16 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 		log.Println(err)
 		return
 	}
-
 	// /p2p/QmZGUdbbgZ4VjKV9FPjc1Em6Hp9eRKfVV6TGWaGY7Fk4MR
 	targetPeerAddr, _ := ma.NewMultiaddr(fmt.Sprintf("/ipfs/%s", pid))
-
 	// /ip4/127.0.0.1/tcp/10043
 	targetAddr := ipfsaddr.Decapsulate(targetPeerAddr)
-
 	// add to peerstore: peerID -> targetAddr
 	ha.Peerstore().AddAddr(peerid, targetAddr, peerstore.PermanentAddrTTL)
 
 	// open stream to target, with given protocol id
 	switch cmd {
-	// operator send purchase to user, signed by operator
+	// receive purchase from operator, signed by operator
 	case "1":
 		// connect to peer, get stream
 		s, err := ha.NewStream(context.Background(), peerid, "/1")
@@ -229,7 +224,7 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 			return
 		}
 
-	// user send cheque to storage, signed by user
+	// send cheque to storage, signed by user
 	case "2":
 		print.Printf100ms("Opening stream to peerID: %v\n", peerid)
 		s, err := ha.NewStream(context.Background(), peerid, "/2")
@@ -323,21 +318,21 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 
 		// close stream for reader to continue
 		s.Close()
-	// call retrieve method of contract
+	// call retrieve method of contract storage, for test
 	case "3":
 		print.Println100ms("call retrieve")
 		callstorage.CallRetrieve()
-	// call deploy
+	// use callcash package to deploy cash contract
 	case "4":
 		print.Println100ms("call deploy cash")
 		callcash.CallDeploy()
 		//callstorage.CallDeploy()
 
-	// read cheque from db, call contract with params
+	// read cheque data from db, then call contract with it
 	case "5":
 		print.Println100ms("call applycheque in cash")
 
-		// read cheque from db
+		// read cheque data from db
 		// create/open db
 		db, err := leveldb.OpenFile("./data.db", nil)
 		if err != nil {
@@ -358,23 +353,25 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 		//
 		db.Close()
 
-		// unmarshal data
+		// unmarshal data from bytes to struct cheque
 		cheque := &pb.Cheque{}
 		if err := proto.Unmarshal(chequeMarshaled, cheque); err != nil {
 			log.Fatalln("Failed to parse check:", err)
 			return
 		}
 
-		// get user address
-		userAddrByte, err := hex.DecodeString(cheque.Purchase.UserAddress)
-		if err != nil {
-			panic("decode error")
-		}
-		// []byte to common.Address
-		userAddress := common.BytesToAddress(userAddrByte)
+		// // string to bytes
+		// userAddrByte, err := hex.DecodeString(cheque.Purchase.UserAddress)
+		// if err != nil {
+		// 	panic("decode error")
+		// }
+		// // []byte to common.Address
+		// userAddress := common.BytesToAddress(userAddrByte)
 
-		// int to bigInt
-		// nonce big
+		// string to common.Address
+		userAddress := common.HexToAddress(cheque.Purchase.UserAddress)
+
+		// int to bigInt, nonce
 		bigN := big.NewInt(cheque.Purchase.NodeNonce)
 
 		// get storage address
