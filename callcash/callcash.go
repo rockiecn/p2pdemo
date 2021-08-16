@@ -10,10 +10,12 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/syndtr/goleveldb/leveldb"
 
 	"github.com/rockiecn/p2pdemo/cash"
 	"github.com/rockiecn/p2pdemo/clientops"
 	"github.com/rockiecn/p2pdemo/hostops"
+	"github.com/rockiecn/p2pdemo/print"
 )
 
 // CallApplyCheque - send tx to contract to call apply cheque method.
@@ -38,31 +40,46 @@ func CallApplyCheque(
 		return err
 	}
 
-	// need cash address
-	cashInstance, err := cash.NewCash(common.HexToAddress("0x0311554d6a28477a264D946677Fd6e46680F3DeF"), cli)
+	// ====== read cashAddr from db
+	// create/open db
+	db, err := leveldb.OpenFile("./data.db", nil)
+	if err != nil {
+		log.Fatal("opfen db error")
+	}
+	//
+	byteCashAddr, errGet := db.Get([]byte("cashAddr"), nil)
+	if errGet != nil {
+		print.Println100ms("db get data error")
+	}
+	//
+	fmt.Printf("-> cash contract address: %s\n", string(byteCashAddr))
+	db.Close()
+
+	// get contract instance from address
+	cashInstance, err := cash.NewCash(common.HexToAddress(string(byteCashAddr)), cli)
 
 	if err != nil {
 		fmt.Println("NewCash err: ", err)
 		return err
 	}
-	fmt.Println("NewCash success: ", cashInstance)
 
-	fmt.Println("=== in callcash.go")
-	fmt.Println("auth:", auth)
-	fmt.Println("userAddr:", userAddr)
-	fmt.Println("nonce:", nonce)
-	fmt.Println("stAddr:", stAddr)
-	fmt.Println("payAmount:", payAmount)
-	fmt.Printf("sig:\n0x%x\n", sig)
+	// fmt.Println("NewCash success: ", cashInstance)
+	// fmt.Println("=== in callcash.go")
+	// fmt.Println("auth:", auth)
+	// fmt.Println("userAddr:", userAddr)
+	// fmt.Println("nonce:", nonce)
+	// fmt.Println("stAddr:", stAddr)
+	// fmt.Println("payAmount:", payAmount)
+	// fmt.Printf("sig:\n0x%x\n", sig)
 
 	// call send trasaction to contract
-	tx, err := cashInstance.ApplyCheque(auth, userAddr, nonce, stAddr, payAmount, sig)
+	_, err = cashInstance.ApplyCheque(auth, userAddr, nonce, stAddr, payAmount, sig)
 	if err != nil {
 		fmt.Println("tx failed :", err)
 		return err
 	}
 
-	fmt.Println("tx:", tx)
+	fmt.Println("-> Now mine a block to complete tx.")
 
 	return err
 }
@@ -136,6 +153,20 @@ func CallDeploy() (common.Address, error) {
 	}
 	log.Println("cashAddr:", cashAddr.String())
 	log.Println("value:", auth.Value.String())
+
+	// ====== store cashAddr to db
+	// create/open db
+	db, err := leveldb.OpenFile("./data.db", nil)
+	if err != nil {
+		log.Fatal("opfen db error")
+	}
+	// store have_purchased
+	err = db.Put([]byte("cashAddr"), []byte(cashAddr.String()), nil)
+	if err != nil {
+		print.Println100ms("db put data error")
+	}
+	db.Close()
+
 	return cashAddr, nil
 
 }
