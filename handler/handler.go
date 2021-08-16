@@ -45,9 +45,13 @@ func Cmd1Handler(s network.Stream) error {
 	// construct purchase message: sig(65 bytes) | data
 	print.Println100ms("-> constructing msg")
 
+	// calc hash
+	hash := utils.CalcHash(Purchase.UserAddress, Purchase.NodeNonce, "", 0)
+	print.Printf100ms("purchase send, hash: %x\n", hash)
+
 	// sign purchase by operator
 	var opSkByte = []byte("cb61e1519b560d994e4361b34c181656d916beb68513cff06c37eb7d258bf93d")
-	sig, err := sigapi.Sign(purchaseMarshaled, opSkByte)
+	sig, err := sigapi.Sign(hash, opSkByte)
 	if err != nil {
 		panic("sign error")
 	}

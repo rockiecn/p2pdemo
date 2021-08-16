@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
+/*
 // Str2Byte - convert string to []byte
 func Str2Byte(str string) []byte {
 	var ret []byte = []byte(str)
@@ -21,6 +22,7 @@ func Byte2Str(data []byte) string {
 	var str string = string(data[:])
 	return str
 }
+*/
 
 // MergeSlice - merge some slice together
 func MergeSlice(s1 []byte, s2 []byte) []byte {

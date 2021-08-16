@@ -6,14 +6,14 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/rockiecn/p2pdemo/utils"
 )
 
 // Sign msg with privateKey
 func Sign(hash []byte, skByte []byte) (sigRet []byte, err error) {
 
 	// byte to string, then string to ecdsa
-	privateKeyECDSA, err := crypto.HexToECDSA(utils.Byte2Str(skByte))
+	//privateKeyECDSA, err := crypto.HexToECDSA(utils.Byte2Str(skByte))
+	privateKeyECDSA, err := crypto.HexToECDSA(string(skByte))
 	if err != nil {
 		log.Fatal(err)
 		return nil, err

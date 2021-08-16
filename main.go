@@ -191,8 +191,12 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 		// []byte to common.Address
 		opAddress := common.BytesToAddress(opAddrByte)
 
+		// calc hash
+		hash := utils.CalcHash(purchase.UserAddress, purchase.NodeNonce, "", 0)
+		print.Printf100ms("purchase receive, hash: %x\n", hash)
+
 		// verify signature
-		ok, _ := sigapi.Verify(purchaseMarshaled, sigByte, opAddress)
+		ok, _ := sigapi.Verify(hash, sigByte, opAddress)
 		if ok {
 			print.Println100ms("<signature of purchase verify success>")
 
@@ -246,7 +250,9 @@ func exeCommand(ctx context.Context, ha host.Host, targetPeer string, cmd string
 		}
 
 		// check if purchase acquired
-		hp := utils.Byte2Str(havePurchased)
+		//hp := utils.Byte2Str(havePurchased)
+		hp := string(havePurchased)
+
 		if hp != "true" {
 			print.Println100ms("not require a purchase, run command 1 to get it.")
 			return
