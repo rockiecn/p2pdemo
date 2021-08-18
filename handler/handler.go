@@ -2,8 +2,10 @@ package handler
 
 import (
 	"encoding/hex"
+	"fmt"
 	"io/ioutil"
 	"log"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/libp2p/go-libp2p-core/network"
@@ -29,11 +31,9 @@ func Cmd1Handler(s network.Stream) error {
 	Purchase.PurchaseAmount = 100 // purchase 100
 	Purchase.NodeNonce = 1
 
-	Purchase.OperatorAddress = "9e0153496067c20943724b79515472195a7aedaa" // operator
-	//cb61e1519b560d994e4361b34c181656d916beb68513cff06c37eb7d258bf93d
-
-	Purchase.UserAddress = "1ab6a9f2b90004c1269563b5da391250ede3c114" // user
-	//b91c265cabae210642d66f9d59137eac2fab2674f4c1c88df3b8e9e6c1f74f9f
+	Purchase.OperatorAddress = "9e0153496067c20943724b79515472195a7aedaa"  // operator
+	Purchase.UserAddress = "1ab6a9f2b90004c1269563b5da391250ede3c114"      // user
+	Purchase.StorageAddress = "0xb213d01542d129806d664248a380db8b12059061" // storage
 	Purchase.TokenAddress = "tokenaddress"
 
 	// serialize
@@ -74,27 +74,28 @@ func Cmd1Handler(s network.Stream) error {
 // Cmd2Handler - command 2 handler, run on storage, receive cheque from user
 func Cmd2Handler(s network.Stream) error {
 
-	// // Read data method 1
-	// in := make([]byte, 1024)
-	// reader := bufio.NewReader(s)
-	// n, err := reader.Read(in)
-	// if err != nil {
-	// 	fmt.Println("read err: ", err)
-	// }
-	// // get real data
-	// if n > 0 {
-	// 	in = in[:n]
-	// }
-	// fmt.Printf("in: %v", in)
+	/*
+		// // Read data method 1
+		// in := make([]byte, 1024)
+		// reader := bufio.NewReader(s)
+		// n, err := reader.Read(in)
+		// if err != nil {
+		// 	fmt.Println("read err: ", err)
+		// }
+		// // get real data
+		// if n > 0 {
+		// 	in = in[:n]
+		// }
+		// fmt.Printf("in: %v", in)
 
-	// // Read data method 2
-	// reader := bufio.NewReader(s)
-	// in, err := reader.ReadBytes('\n')
-	// if err != nil {
-	// 	return err
-	// }
-	// fmt.Printf("read: %v", in)
-
+		// // Read data method 2
+		// reader := bufio.NewReader(s)
+		// in, err := reader.ReadBytes('\n')
+		// if err != nil {
+		// 	return err
+		// }
+		// fmt.Printf("read: %v", in)
+	*/
 	// Read data method 3
 	// Caution: Need writer to close stream first.
 	in, err := ioutil.ReadAll(s)
@@ -130,38 +131,50 @@ func Cmd2Handler(s network.Stream) error {
 	// calc hash from cheque
 	hash := utils.CalcHash(cheque.Purchase.UserAddress, cheque.Purchase.NodeNonce, cheque.StorageAddress, cheque.PayAmount)
 
-	// verify signature: []byte []byte common.Address
+	// verify cheque signature: []byte []byte common.Address
 	ok, verErr := sigapi.Verify(hash, sigByte, userAddress)
 	if verErr != nil {
 		log.Fatal("verify fatal error occured")
 		return verErr
 	}
 
-	if ok {
+	if !ok {
+		print.Println100ms("<signature of cheque verify failed>")
+	} else {
 		print.Println100ms("<signature of cheque verify success>")
 
 		// wirte cheque into db
 		// create/open db
-		db, err := leveldb.OpenFile("./data.db", nil)
+		db, err := leveldb.OpenFile("./storage_data.db", nil)
 		if err != nil {
 			log.Fatal("opfen db error")
 		}
-		// store cheque
-		err = db.Put([]byte("cheque"), chequeMarshaled, nil)
+		defer db.Close()
+
+		// gen purchase key: storageAddress + nonce
+		bigNonce := big.NewInt(cheque.Purchase.NodeNonce)
+		var chequeKey []byte
+		chequeKey, err = utils.GenPurchaseKey(cheque.Purchase.StorageAddress, bigNonce)
 		if err != nil {
-			print.Println100ms("db put data error")
-		}
-		// store cheque signature
-		err = db.Put([]byte("cheque sig"), sigByte, nil)
-		if err != nil {
-			print.Println100ms("db put data error")
+			log.Fatal("GenPurchaseKey error:", err)
 		}
 
-		db.Close()
-	} else {
-		print.Println100ms("<signature of cheque verify failed>")
+		if utils.DEBUG {
+			fmt.Println("in Cmd2Handler.")
+			fmt.Printf("chequeKey: %x\n", chequeKey)
+		}
+
+		// use chequeKey as cheque id to store chequeMarshaled.
+		chequeMarshWithSig := utils.MergeSlice(sigByte, chequeMarshaled)
+		err = db.Put(chequeKey, chequeMarshWithSig, nil)
+		if err != nil {
+			print.Println100ms("db put data error")
+			return err
+		}
+
 	}
 
+	print.PrintMenu()
 	print.Println100ms("\n> Intput target address and cmd: ")
 
 	return nil

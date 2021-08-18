@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/ethereum/go-ethereum v1.10.7
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/ipfs/go-log/v2 v2.3.0
 	github.com/libp2p/go-libp2p v0.14.4
 	github.com/libp2p/go-libp2p-core v0.8.6

@@ -17,6 +17,8 @@ import (
 // HOST - the chain host
 const HOST = "http://localhost:8545"
 
+var HostInfo host.Host
+
 // MakeBasicHost -  creates a LibP2P host with a random peer ID listening on the
 // given multiaddress. It won't encrypt the connection if insecure is true.
 func MakeBasicHost(listenPort int, insecure bool, randseed int64) (host.Host, error) {

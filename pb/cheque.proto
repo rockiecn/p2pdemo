@@ -6,10 +6,11 @@ option go_package = "../pb";
 message Purchase {
 	string operator_address = 1; // operator
 	string user_address = 2;	// user
-	string token_address = 3;	// token
+	string storage_address =3;	// storage
+	string token_address = 4;	// token
 
-	int64 purchase_amount = 4;
-	int64 node_nonce = 5;
+	int64 purchase_amount = 5;
+	int64 node_nonce = 6;
 }
 
 message Cheque {

@@ -3,11 +3,17 @@ package utils
 import (
 	"encoding/binary"
 	"encoding/hex"
+	"fmt"
+	"log"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/rockiecn/p2pdemo/pb"
+	"google.golang.org/protobuf/proto"
 )
+
+const DEBUG bool = true
 
 /*
 // Str2Byte - convert string to []byte
@@ -63,4 +69,32 @@ func CalcHash(userAddress string, int64Nonce int64, stAddress string, int64PayAm
 	// calc hash 32 bytes
 	hash := crypto.Keccak256(userBytes, noncePad32, stBytes, payPad32)
 	return hash
+}
+
+// calculate purchase hash with marshaled purchase, used as purchase id.
+func CalcPurchaseHash(purchaseMarshaled []byte) []byte {
+	// unmarshal purchase
+	purchase := &pb.Purchase{}
+	if err := proto.Unmarshal(purchaseMarshaled, purchase); err != nil {
+		log.Fatalln("Failed to parse check:", err)
+	}
+
+	// calc hash 32 bytes
+	bigNonce := big.NewInt(purchase.NodeNonce)
+	hash := crypto.Keccak256([]byte(purchase.StorageAddress), bigNonce.Bytes())
+	return hash
+}
+
+// generate purchase key from storage address and nonce
+func GenPurchaseKey(addr string, nonce *big.Int) ([]byte, error) {
+	addrByte := []byte(addr)
+
+	keyByte := MergeSlice(addrByte, nonce.Bytes())
+	if DEBUG {
+		fmt.Printf("in GenPurchaseKey\n")
+		fmt.Printf("storage addr:%s\n", []byte(addr))
+		fmt.Printf("nonce:%x\n", nonce.Bytes())
+		fmt.Printf("keyByte:%x\n", keyByte)
+	}
+	return keyByte, nil
 }

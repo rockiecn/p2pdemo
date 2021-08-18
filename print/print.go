@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/rockiecn/p2pdemo/hostops"
 	"github.com/rockiecn/p2pdemo/pb"
 )
 
@@ -52,4 +53,7 @@ func PrintMenu() {
 	fmt.Println("cmd 4: call deploy cash")
 	fmt.Println("cmd 5: call applycheque in cash")
 	fmt.Println("====================================================")
+
+	fullAddr := hostops.GetHostAddress(hostops.HostInfo)
+	Printf100ms("\n[ %s ]\n", fullAddr)
 }
