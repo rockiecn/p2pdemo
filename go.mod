@@ -9,6 +9,7 @@ require (
 	github.com/libp2p/go-libp2p v0.14.4
 	github.com/libp2p/go-libp2p-core v0.8.6
 	github.com/libp2p/go-libp2p-crypto v0.1.0
+	github.com/liushuochen/gotable v0.0.0-20210814101754-3708ac789a24
 	github.com/multiformats/go-multiaddr v0.3.3
 	github.com/rockiecn/interact v1.1.1
 	github.com/syndtr/goleveldb v1.0.1-0.20210305035536-64b5b1c73954

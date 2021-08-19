@@ -52,6 +52,7 @@ func PrintMenu() {
 	fmt.Println("cmd 3: call retrieve in storage")
 	fmt.Println("cmd 4: call deploy cash")
 	fmt.Println("cmd 5: call applycheque in cash")
+	fmt.Println("cmd 6: list key")
 	fmt.Println("====================================================")
 
 	fullAddr := hostops.GetHostAddress(hostops.HostInfo)
