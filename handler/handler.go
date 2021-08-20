@@ -29,12 +29,48 @@ func Cmd1Handler(s network.Stream) error {
 	// construct purchase
 	Purchase := &pb.Purchase{}
 	Purchase.PurchaseAmount = 100 // purchase 100
-	Purchase.NodeNonce = 1
+	//Purchase.NodeNonce = 1
 
 	Purchase.OperatorAddress = "9e0153496067c20943724b79515472195a7aedaa"  // operator
 	Purchase.UserAddress = "1ab6a9f2b90004c1269563b5da391250ede3c114"      // user
 	Purchase.StorageAddress = "0xb213d01542d129806d664248a380db8b12059061" // storage
 	Purchase.TokenAddress = "tokenaddress"
+
+	// create/open db
+	db, err := leveldb.OpenFile("./operator_data.db", nil)
+	if err != nil {
+		log.Fatal("open db error")
+	}
+	defer db.Close()
+
+	var newNonce int64 = 0
+	// storage -> nonce
+	ret, err := db.Get([]byte(Purchase.StorageAddress), nil)
+	if err != nil {
+		if err.Error() == "leveldb: not found" { // no nonce at all
+			db.Put([]byte(Purchase.StorageAddress), utils.Int64ToBytes(1), nil)
+		} else {
+			fmt.Println("operator db get nonce error: ", err)
+			return err
+		}
+	} else { // increase nonce by 1
+		// byte to string
+		oldNonce := utils.BytesToInt64(ret)
+		fmt.Println("oldNonce: ", oldNonce)
+		newNonce = oldNonce + 1
+		// put new nonce into db
+		byteN := utils.Int64ToBytes(newNonce)
+		fmt.Println("newNonce: ", newNonce)
+		fmt.Printf("byteN: %v\n", byteN)
+		err = db.Put([]byte(Purchase.StorageAddress), byteN, nil)
+		if err != nil {
+			fmt.Println("operator db put nonce error")
+			return err
+		}
+	}
+
+	//
+	Purchase.NodeNonce = newNonce
 
 	// serialize
 	purchaseMarshaled, err := proto.Marshal(Purchase)

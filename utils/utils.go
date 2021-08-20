@@ -1,19 +1,31 @@
 package utils
 
 import (
+	"context"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"log"
 	"math/big"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/rockiecn/p2pdemo/pb"
+	"github.com/libp2p/go-libp2p-core/peer"
+
+	"github.com/liushuochen/gotable"
+	"github.com/syndtr/goleveldb/leveldb"
 	"google.golang.org/protobuf/proto"
+
+	"github.com/rockiecn/p2pdemo/pb"
 )
 
 const DEBUG bool = true
+
+// package level variable
+var Ctx context.Context
+var Peerid peer.ID = ""
+var Index []string
 
 /*
 // Str2Byte - convert string to []byte
@@ -49,6 +61,22 @@ func Uint32ToBytes(n uint32) []byte {
 func BytesToUint32(b []byte) uint32 {
 	_ = b[3] // bounds check hint to compiler; see golang.org/issue/14808
 	return uint32(b[0]) | uint32(b[1])<<8 | uint32(b[2])<<16 | uint32(b[3])<<24
+}
+
+func Int64ToBytes(i int64) []byte {
+	var buf = make([]byte, 8)
+	binary.LittleEndian.PutUint64(buf, uint64(i))
+	return buf
+}
+
+func BytesToInt64(buf []byte) int64 {
+	return int64(binary.LittleEndian.Uint64(buf))
+}
+
+func Byte2Str(data []byte) string {
+	//var str string = string(data[:len(data)])
+	var str string = string(data[:])
+	return str
 }
 
 // CalcHash - calculate hash from cheque
@@ -97,4 +125,89 @@ func GenPurchaseKey(addr string, nonce *big.Int) ([]byte, error) {
 		fmt.Printf("keyByte:%x\n", keyByte)
 	}
 	return keyByte, nil
+}
+
+// Update Index
+func UpdateIndex() {
+	// clear index
+	Index = Index[0:0]
+
+	// create/open db
+	db, err := leveldb.OpenFile("./user_data.db", nil)
+	if err != nil {
+		log.Fatal("opfen db error")
+	}
+	defer db.Close()
+
+	iter := db.NewIterator(nil, nil)
+	for iter.Next() {
+		keyByte := iter.Key()
+		Index = append(Index, hex.EncodeToString(keyByte))
+	}
+	iter.Release()
+	err = iter.Error()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+}
+
+// list data in cheque table
+func ListUserDB() {
+	// create/open db
+	db, err := leveldb.OpenFile("./user_data.db", nil)
+	if err != nil {
+		log.Fatal("opfen db error")
+	}
+	defer db.Close()
+
+	// show table
+	table, err := gotable.Create("ID", "FROM", "TO", "VALUE", "NONCE")
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	// show table
+	var id int = 0
+	for id < len(Index) {
+
+		// get data
+		var purMarshalWithSig []byte
+		keyByte, err := hex.DecodeString(Index[id])
+		if err != nil {
+			fmt.Println("decodeString error:", err.Error())
+			return
+		}
+		purMarshalWithSig, _ = db.Get(keyByte, nil)
+		//purchaseSig := purMarshalWithSig[:65]
+		purchaseMarshaled := purMarshalWithSig[65:]
+		// unmarshal it to get purchase itself
+		purchase := &pb.Purchase{}
+		if err := proto.Unmarshal(purchaseMarshaled, purchase); err != nil {
+			log.Fatalln("Failed to parse check:", err)
+		}
+
+		// transmit to string
+		strID := strconv.Itoa(id)
+		strValue := strconv.FormatInt(purchase.PurchaseAmount, 10)
+		strNonce := strconv.FormatInt(purchase.NodeNonce, 10)
+		value := map[string]string{
+			"ID":    strID,
+			"FROM":  purchase.UserAddress,
+			"TO":    purchase.StorageAddress,
+			"VALUE": strValue,
+			"NONCE": strNonce,
+		}
+		err = table.AddRow(value)
+		if err != nil {
+			log.Fatal(err.Error())
+			return
+		}
+		id++
+	}
+
+	//r, _ := table.Json(4)
+	//fmt.Println(r)
+	//table.CloseBorder()
+	table.PrintTable()
 }

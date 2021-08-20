@@ -47,14 +47,15 @@ func Printf100ms(format string, a ...interface{}) {
 func PrintMenu() {
 	fmt.Println()
 	fmt.Println("======================= Menu =======================")
-	fmt.Println("cmd 1: require purchase from operator")
-	fmt.Println("cmd 2: send cheque to storage")
-	fmt.Println("cmd 3: call retrieve in storage")
-	fmt.Println("cmd 4: call deploy cash")
-	fmt.Println("cmd 5: call applycheque in cash")
-	fmt.Println("cmd 6: list key")
+	fmt.Println(" 1: [USER] Require purchase from operator")
+	fmt.Println(" 2: [USER] Send cheque to storage")
+	fmt.Println(" 3: [TEST] Call retrieve in storage")
+	fmt.Println(" 4: [OPERATOR] Call deploy cash")
+	fmt.Println(" 5: [STORAGE] Call applycheque in cash")
+	fmt.Println(" 6: [USER] List cheque table")
+	fmt.Println(" 7: [USER] Delete an entry of user db.")
 	fmt.Println("====================================================")
 
 	fullAddr := hostops.GetHostAddress(hostops.HostInfo)
-	Printf100ms("\n[ %s ]\n", fullAddr)
+	Printf100ms("\nPeer addres: \n[ %s ]\n", fullAddr)
 }

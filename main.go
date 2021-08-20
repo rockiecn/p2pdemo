@@ -20,15 +20,13 @@ import (
 	"github.com/rockiecn/p2pdemo/handler"
 	"github.com/rockiecn/p2pdemo/hostops"
 	"github.com/rockiecn/p2pdemo/print"
+	"github.com/rockiecn/p2pdemo/utils"
 )
-
-// package level variable
-var Ctx context.Context
 
 // run listener
 func init() {
 	var Cancel context.CancelFunc
-	Ctx, Cancel = context.WithCancel(context.Background())
+	utils.Ctx, Cancel = context.WithCancel(context.Background())
 	defer Cancel()
 
 	// Change to INFO for extra info
@@ -51,54 +49,55 @@ func init() {
 
 	// run listener
 	listenerDone := make(chan int)
-	go runListener(Ctx, hostops.HostInfo, port, listenerDone)
+	go runListener(utils.Ctx, hostops.HostInfo, port, listenerDone)
 	<-listenerDone //wait until runlistener complete
 }
 
 //
 func main() {
+
+	fullAddr := hostops.GetHostAddress(hostops.HostInfo)
+	fmt.Printf("\nPeer addres: \n[ %s ]\n", fullAddr)
+
+	connPeer()
+
 	// run commandline
 	for {
 		// menu
 		print.PrintMenu()
 
-		var strCmd, strTarget string
-		print.Println100ms("\n> Intput target address and cmd: ")
-		fmt.Scanf("%s %s", &strTarget, &strCmd)
-		if strTarget == "" || strCmd == "" {
-			print.Printf100ms("invalid input, need target and cmd\n")
-			continue
-		}
-
-		// parse peerid
-		peerid, err := parsePeerID(hostops.HostInfo, strTarget)
-		if err != nil {
-			log.Println(err)
+		var strCmd string
+		print.Println100ms("\n> Intput command: ")
+		fmt.Scanf("%s", &strCmd)
+		if strCmd == "" {
+			print.Printf100ms("invalid input.\n")
 			return
 		}
+
 		// execute command with cmd id
 		//exeCommand(Ctx, hostops.HostInfo, strTarget, strCmd)
 		switch strCmd {
 		case "1":
 			// operator send purchase to user
-			execmd.ExeCmd1(Ctx, hostops.HostInfo, peerid)
+			execmd.ExeCmd1()
 		case "2":
 			// user send cheque to storage
-			execmd.ExeCmd2(Ctx, hostops.HostInfo, peerid)
+			execmd.ExeCmd2()
 		case "3":
 			// test
-			execmd.ExeCmd3(Ctx, hostops.HostInfo, peerid)
+			execmd.ExeCmd3()
 		case "4":
 			// deploy cash
-			execmd.ExeCmd4(Ctx, hostops.HostInfo, peerid)
+			execmd.ExeCmd4()
 		case "5":
 			// call cash contract
-			execmd.ExeCmd5(Ctx, hostops.HostInfo, peerid)
+			execmd.ExeCmd5()
 		case "6":
 			// list user_db
-			execmd.ExeCmd6(Ctx, hostops.HostInfo, peerid)
+			execmd.ExeCmd6()
 		case "7":
-			// list storage_db
+			// delete user db
+			execmd.ExeCmd7()
 		case "8":
 			// delete an entry of user_db
 		case "9":
@@ -165,4 +164,24 @@ func parsePeerID(ha host.Host, targetPeer string) (peer.ID, error) {
 	ha.Peerstore().AddAddr(peerid, targetAddr, peerstore.PermanentAddrTTL)
 
 	return peerid, nil
+}
+
+// connect to a peer
+func connPeer() {
+	var strTarget string
+	print.Println100ms("-> Now connect to a peer")
+	print.Println100ms("-> Intput peer address: ")
+	fmt.Scanf("%s", &strTarget)
+	if strTarget == "" {
+		print.Printf100ms("invalid input, need target address.\n")
+		return
+	}
+
+	// parse peerid
+	var err error
+	utils.Peerid, err = parsePeerID(hostops.HostInfo, strTarget)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 }
