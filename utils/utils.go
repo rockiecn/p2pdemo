@@ -79,11 +79,11 @@ func Byte2Str(data []byte) string {
 	return str
 }
 
-// CalcHash - calculate hash from cheque
-func CalcHash(userAddress string, int64Nonce int64, stAddress string, int64PayAmount int64) []byte {
+// CalcHash - calculate hash from PayCheque
+func CalcHash(From string, int64Nonce int64, stAddress string, int64PayAmount int64) []byte {
 
 	//
-	userBytes, _ := hex.DecodeString(userAddress)
+	userBytes, _ := hex.DecodeString(From)
 	// pad nonce to 32 bytes
 	bigNonce := big.NewInt(int64Nonce)
 	noncePad32 := common.LeftPadBytes(bigNonce.Bytes(), 32)
@@ -99,27 +99,27 @@ func CalcHash(userAddress string, int64Nonce int64, stAddress string, int64PayAm
 	return hash
 }
 
-// calculate purchase hash with marshaled purchase, used as purchase id.
-func CalcPurchaseHash(purchaseMarshaled []byte) []byte {
-	// unmarshal purchase
-	purchase := &pb.Purchase{}
-	if err := proto.Unmarshal(purchaseMarshaled, purchase); err != nil {
+// calculate Cheque hash with marshaled Cheque, used as Cheque id.
+func CalcChequeHash(ChequeMarshaled []byte) []byte {
+	// unmarshal Cheque
+	Cheque := &pb.Cheque{}
+	if err := proto.Unmarshal(ChequeMarshaled, Cheque); err != nil {
 		log.Fatalln("Failed to parse check:", err)
 	}
 
 	// calc hash 32 bytes
-	bigNonce := big.NewInt(purchase.NodeNonce)
-	hash := crypto.Keccak256([]byte(purchase.StorageAddress), bigNonce.Bytes())
+	bigNonce := big.NewInt(Cheque.NodeNonce)
+	hash := crypto.Keccak256([]byte(Cheque.To), bigNonce.Bytes())
 	return hash
 }
 
-// generate purchase key from storage address and nonce
-func GenPurchaseKey(addr string, nonce *big.Int) ([]byte, error) {
+// generate Cheque key from storage address and nonce
+func GenChequeKey(addr string, nonce *big.Int) ([]byte, error) {
 	addrByte := []byte(addr)
 
 	keyByte := MergeSlice(addrByte, nonce.Bytes())
 	if DEBUG {
-		fmt.Printf("in GenPurchaseKey\n")
+		fmt.Printf("in GenChequeKey\n")
 		fmt.Printf("storage addr:%s\n", []byte(addr))
 		fmt.Printf("nonce:%x\n", nonce.Bytes())
 		fmt.Printf("keyByte:%x\n", keyByte)
@@ -152,7 +152,7 @@ func UpdateIndex() {
 	}
 }
 
-// list data in cheque table
+// list data in PayCheque table
 func ListUserDB() {
 	// create/open db
 	db, err := leveldb.OpenFile("./user_data.db", nil)
@@ -179,22 +179,22 @@ func ListUserDB() {
 			return
 		}
 		purMarshalWithSig, _ = db.Get(keyByte, nil)
-		//purchaseSig := purMarshalWithSig[:65]
-		purchaseMarshaled := purMarshalWithSig[65:]
-		// unmarshal it to get purchase itself
-		purchase := &pb.Purchase{}
-		if err := proto.Unmarshal(purchaseMarshaled, purchase); err != nil {
+		//ChequeSig := purMarshalWithSig[:65]
+		ChequeMarshaled := purMarshalWithSig[65:]
+		// unmarshal it to get Cheque itself
+		Cheque := &pb.Cheque{}
+		if err := proto.Unmarshal(ChequeMarshaled, Cheque); err != nil {
 			log.Fatalln("Failed to parse check:", err)
 		}
 
 		// transmit to string
 		strID := strconv.Itoa(id)
-		strValue := strconv.FormatInt(purchase.PurchaseAmount, 10)
-		strNonce := strconv.FormatInt(purchase.NodeNonce, 10)
+		strValue := strconv.FormatInt(Cheque.Value, 10)
+		strNonce := strconv.FormatInt(Cheque.NodeNonce, 10)
 		value := map[string]string{
 			"ID":    strID,
-			"FROM":  purchase.UserAddress,
-			"TO":    purchase.StorageAddress,
+			"FROM":  Cheque.From,
+			"TO":    Cheque.To,
 			"VALUE": strValue,
 			"NONCE": strNonce,
 		}

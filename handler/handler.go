@@ -21,20 +21,20 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// Cmd1Handler - command 1 handler, run on user, receive purchase from operator
-func Cmd1Handler(s network.Stream) error {
+// Cmd1Handler - command 1 handler, run on user, receive Cheque from operator
+func BuyCheckHandler(s network.Stream) error {
 
-	print.Println100ms("--> Construct and send purchase...")
+	print.Println100ms("--> Construct and send Cheque...")
 
-	// construct purchase
-	Purchase := &pb.Purchase{}
-	Purchase.PurchaseAmount = 100 // purchase 100
-	//Purchase.NodeNonce = 1
+	// construct Cheque
+	Cheque := &pb.Cheque{}
+	Cheque.Value = 100 // Cheque 100
+	//Cheque.NodeNonce = 1
 
-	Purchase.OperatorAddress = "9e0153496067c20943724b79515472195a7aedaa"  // operator
-	Purchase.UserAddress = "1ab6a9f2b90004c1269563b5da391250ede3c114"      // user
-	Purchase.StorageAddress = "0xb213d01542d129806d664248a380db8b12059061" // storage
-	Purchase.TokenAddress = "tokenaddress"
+	Cheque.OperatorAddress = "9e0153496067c20943724b79515472195a7aedaa" // operator
+	Cheque.From = "1ab6a9f2b90004c1269563b5da391250ede3c114"            // user
+	Cheque.To = "0xb213d01542d129806d664248a380db8b12059061"            // storage
+	Cheque.TokenAddress = "tokenaddress"
 
 	// create/open db
 	db, err := leveldb.OpenFile("./operator_data.db", nil)
@@ -45,10 +45,10 @@ func Cmd1Handler(s network.Stream) error {
 
 	var newNonce int64 = 0
 	// storage -> nonce
-	ret, err := db.Get([]byte(Purchase.StorageAddress), nil)
+	ret, err := db.Get([]byte(Cheque.To), nil)
 	if err != nil {
 		if err.Error() == "leveldb: not found" { // no nonce at all
-			db.Put([]byte(Purchase.StorageAddress), utils.Int64ToBytes(1), nil)
+			db.Put([]byte(Cheque.To), utils.Int64ToBytes(1), nil)
 		} else {
 			fmt.Println("operator db get nonce error: ", err)
 			return err
@@ -62,7 +62,7 @@ func Cmd1Handler(s network.Stream) error {
 		byteN := utils.Int64ToBytes(newNonce)
 		fmt.Println("newNonce: ", newNonce)
 		fmt.Printf("byteN: %v\n", byteN)
-		err = db.Put([]byte(Purchase.StorageAddress), byteN, nil)
+		err = db.Put([]byte(Cheque.To), byteN, nil)
 		if err != nil {
 			fmt.Println("operator db put nonce error")
 			return err
@@ -70,30 +70,38 @@ func Cmd1Handler(s network.Stream) error {
 	}
 
 	//
-	Purchase.NodeNonce = newNonce
+	Cheque.NodeNonce = newNonce
 
 	// serialize
-	purchaseMarshaled, err := proto.Marshal(Purchase)
+	ChequeMarshaled, err := proto.Marshal(Cheque)
 	if err != nil {
-		log.Fatalln("Failed to encode cheque:", err)
+		log.Fatalln("Failed to encode PayCheque:", err)
 	}
 
-	// construct purchase message: sig(65 bytes) | data
+	// construct Cheque message: sig(65 bytes) | data
 	print.Println100ms("-> constructing msg")
 
 	// calc hash
-	hash := utils.CalcHash(Purchase.UserAddress, Purchase.NodeNonce, "", 0)
-	print.Printf100ms("purchase send, hash: %x\n", hash)
+	hash := utils.CalcHash(Cheque.From, Cheque.NodeNonce, "", 0)
+	print.Printf100ms("Cheque send, hash: %x\n", hash)
 
-	// sign purchase by operator
+	// sign Cheque by operator
 	var opSkByte = []byte("cb61e1519b560d994e4361b34c181656d916beb68513cff06c37eb7d258bf93d")
 	sig, err := sigapi.Sign(hash, opSkByte)
 	if err != nil {
-		panic("sign error")
+		log.Fatal("sign error:", err)
 	}
 
+	cashAddrByte, err := db.Get([]byte("cashAddr"), nil)
+	if err != nil {
+		log.Fatal("get cash address error:", err)
+	}
+	fmt.Printf("-- cash address: %x\n", cashAddrByte)
+
+	// sig(65) | cash address(42) | cheque
 	var msg = []byte{}
-	msg = utils.MergeSlice(sig, purchaseMarshaled)
+	msg = utils.MergeSlice(sig, cashAddrByte)
+	msg = utils.MergeSlice(msg, ChequeMarshaled)
 
 	print.Println100ms("-> sending msg")
 	// send msg
@@ -102,13 +110,13 @@ func Cmd1Handler(s network.Stream) error {
 		panic("stream write error")
 	}
 
-	print.Println100ms("\n> Intput target address and cmd: ")
+	print.Println100ms("\n> Intput target cmd: ")
 
 	return err
 }
 
-// Cmd2Handler - command 2 handler, run on storage, receive cheque from user
-func Cmd2Handler(s network.Stream) error {
+// Cmd2Handler - command 2 handler, run on storage, receive PayCheque from user
+func SendCheckHandler(s network.Stream) error {
 
 	/*
 		// // Read data method 1
@@ -142,44 +150,44 @@ func Cmd2Handler(s network.Stream) error {
 
 	// parse data
 	var sigByte = in[:65]
-	var chequeMarshaled = in[65:]
+	var PayChequeMarshaled = in[65:]
 
 	// unmarshal data
-	cheque := &pb.Cheque{}
-	if err := proto.Unmarshal(chequeMarshaled, cheque); err != nil {
+	PayCheque := &pb.PayCheque{}
+	if err := proto.Unmarshal(PayChequeMarshaled, PayCheque); err != nil {
 		log.Fatalln("Failed to parse check:", err)
 		return err
 	}
 
 	//
-	print.PrintCheque(cheque)
+	print.PrintPayCheque(PayCheque)
 
-	//===== verify signature of cheque(signed by user)
+	//===== verify signature of PayCheque(signed by user)
 
 	// get user address
-	userAddrByte, err := hex.DecodeString(cheque.Purchase.UserAddress)
+	userAddrByte, err := hex.DecodeString(PayCheque.Cheque.From)
 	if err != nil {
 		panic("decode error")
 	}
 	// []byte to common.Address
-	userAddress := common.BytesToAddress(userAddrByte)
+	From := common.BytesToAddress(userAddrByte)
 
-	// calc hash from cheque
-	hash := utils.CalcHash(cheque.Purchase.UserAddress, cheque.Purchase.NodeNonce, cheque.StorageAddress, cheque.PayAmount)
+	// calc hash from PayCheque
+	hash := utils.CalcHash(PayCheque.Cheque.From, PayCheque.Cheque.NodeNonce, PayCheque.To, PayCheque.PayValue)
 
-	// verify cheque signature: []byte []byte common.Address
-	ok, verErr := sigapi.Verify(hash, sigByte, userAddress)
+	// verify PayCheque signature: []byte []byte common.Address
+	ok, verErr := sigapi.Verify(hash, sigByte, From)
 	if verErr != nil {
 		log.Fatal("verify fatal error occured")
 		return verErr
 	}
 
 	if !ok {
-		print.Println100ms("<signature of cheque verify failed>")
+		print.Println100ms("<signature of PayCheque verify failed>")
 	} else {
-		print.Println100ms("<signature of cheque verify success>")
+		print.Println100ms("<signature of PayCheque verify success>")
 
-		// wirte cheque into db
+		// wirte PayCheque into db
 		// create/open db
 		db, err := leveldb.OpenFile("./storage_data.db", nil)
 		if err != nil {
@@ -187,22 +195,22 @@ func Cmd2Handler(s network.Stream) error {
 		}
 		defer db.Close()
 
-		// gen purchase key: storageAddress + nonce
-		bigNonce := big.NewInt(cheque.Purchase.NodeNonce)
-		var chequeKey []byte
-		chequeKey, err = utils.GenPurchaseKey(cheque.Purchase.StorageAddress, bigNonce)
+		// gen Cheque key: To + nonce
+		bigNonce := big.NewInt(PayCheque.Cheque.NodeNonce)
+		var PayChequeKey []byte
+		PayChequeKey, err = utils.GenChequeKey(PayCheque.Cheque.To, bigNonce)
 		if err != nil {
-			log.Fatal("GenPurchaseKey error:", err)
+			log.Fatal("GenChequeKey error:", err)
 		}
 
 		if utils.DEBUG {
 			fmt.Println("in Cmd2Handler.")
-			fmt.Printf("chequeKey: %x\n", chequeKey)
+			fmt.Printf("PayChequeKey: %x\n", PayChequeKey)
 		}
 
-		// use chequeKey as cheque id to store chequeMarshaled.
-		chequeMarshWithSig := utils.MergeSlice(sigByte, chequeMarshaled)
-		err = db.Put(chequeKey, chequeMarshWithSig, nil)
+		// use PayChequeKey as PayCheque id to store PayChequeMarshaled.
+		PayChequeMarshWithSig := utils.MergeSlice(sigByte, PayChequeMarshaled)
+		err = db.Put(PayChequeKey, PayChequeMarshWithSig, nil)
 		if err != nil {
 			print.Println100ms("db put data error")
 			return err

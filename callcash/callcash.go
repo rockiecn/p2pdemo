@@ -19,11 +19,11 @@ import (
 )
 
 // CallApplyCheque - send tx to contract to call apply cheque method.
-func CallApplyCheque(
+func CallApplyPayCheque(
 	userAddr common.Address,
 	nonce *big.Int,
 	stAddr common.Address,
-	payAmount *big.Int,
+	PayValue *big.Int,
 	sig []byte) error {
 	fmt.Println("HOST: ", hostops.HOST)
 	cli, err := clientops.GetClient(hostops.HOST)
@@ -69,11 +69,11 @@ func CallApplyCheque(
 	// fmt.Println("userAddr:", userAddr)
 	// fmt.Println("nonce:", nonce)
 	// fmt.Println("stAddr:", stAddr)
-	// fmt.Println("payAmount:", payAmount)
+	// fmt.Println("PayValue:", PayValue)
 	// fmt.Printf("sig:\n0x%x\n", sig)
 
 	// call send trasaction to contract
-	_, err = cashInstance.ApplyCheque(auth, userAddr, nonce, stAddr, payAmount, sig)
+	_, err = cashInstance.ApplyCheque(auth, userAddr, nonce, stAddr, PayValue, sig)
 	if err != nil {
 		fmt.Println("tx failed :", err)
 		return err
@@ -135,6 +135,7 @@ func CallDeploy() (common.Address, error) {
 	// string to bigint
 	bn := new(big.Int)
 	bn, ok1 := bn.SetString("100000000000000000000", 10) // deploy 100 eth
+	//bn, ok1 := bn.SetString("1000000000000000000", 10) // deploy 1 eth
 	//bn, ok1 := bn.SetString("1000", 10) // deploy 100 eth
 	if !ok1 {
 		fmt.Println("SetString: error")
@@ -156,7 +157,7 @@ func CallDeploy() (common.Address, error) {
 
 	// ====== store cashAddr to db
 	// create/open db
-	db, err := leveldb.OpenFile("./data.db", nil)
+	db, err := leveldb.OpenFile("./operator_data.db", nil)
 	if err != nil {
 		log.Fatal("opfen db error")
 	}

@@ -112,7 +112,7 @@ func runListener(ctx context.Context, ha host.Host, listenPort int, listenerDone
 	// executed handler when a stream opened.
 	ha.SetStreamHandler("/1", func(s network.Stream) {
 		print.Println100ms("--> Received command 1")
-		if err := handler.Cmd1Handler(s); err != nil {
+		if err := handler.BuyCheckHandler(s); err != nil {
 			log.Println(err)
 			s.Reset()
 		}
@@ -123,7 +123,7 @@ func runListener(ctx context.Context, ha host.Host, listenPort int, listenerDone
 	// handler for cmd 2
 	ha.SetStreamHandler("/2", func(s network.Stream) {
 		print.Println100ms("--> Received command 2")
-		if err := handler.Cmd2Handler(s); err != nil {
+		if err := handler.SendCheckHandler(s); err != nil {
 			log.Println(err)
 			s.Reset()
 		}

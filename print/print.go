@@ -8,26 +8,26 @@ import (
 	"github.com/rockiecn/p2pdemo/pb"
 )
 
-func PrintPurchase(purchase *pb.Purchase) {
-	Println100ms("------------------ Print Purchase ------------------")
-	Printf100ms("->purchase.PurchaseAmount: %d\n", purchase.PurchaseAmount)
-	Printf100ms("->purchase.NodeNonce: %d\n", purchase.NodeNonce)
-	Printf100ms("->purchase.OperatorAddress: %s\n", purchase.OperatorAddress)
-	Printf100ms("->purchase.UserAddress: %s\n", purchase.UserAddress)
-	Printf100ms("->purchase.TokenAddress: %s\n", purchase.TokenAddress)
+func PrintCheque(Cheque *pb.Cheque) {
+	Println100ms("------------------ Print Cheque ------------------")
+	Printf100ms("->Cheque.Value: %d\n", Cheque.Value)
+	Printf100ms("->Cheque.NodeNonce: %d\n", Cheque.NodeNonce)
+	Printf100ms("->Cheque.OperatorAddress: %s\n", Cheque.OperatorAddress)
+	Printf100ms("->Cheque.From: %s\n", Cheque.From)
+	Printf100ms("->Cheque.TokenAddress: %s\n", Cheque.TokenAddress)
 	Println100ms("----------------------------------------------------")
 }
 
-func PrintCheque(cheque *pb.Cheque) {
-	Println100ms("-------------------- Print Cheque ------------------")
-	Printf100ms("->purchase.MaxAmount: %d\n", cheque.Purchase.PurchaseAmount)
-	Printf100ms("->purchase.NodeNonce: %d\n", cheque.Purchase.NodeNonce)
-	Printf100ms("->purchase.OperatorAddress: %s\n", cheque.Purchase.OperatorAddress)
-	Printf100ms("->purchase.UserAddress: %s\n", cheque.Purchase.UserAddress)
-	Printf100ms("->purchase.TokenAddress: %s\n", cheque.Purchase.TokenAddress)
-	Printf100ms("->cheque.PurchaseSig: %x\n", cheque.PurchaseSig)
-	Printf100ms("->cheque.PayAmount: %d\n", cheque.PayAmount)
-	Printf100ms("->cheque.StorageAddress: %s\n", cheque.StorageAddress)
+func PrintPayCheque(PayCheque *pb.PayCheque) {
+	Println100ms("-------------------- Print PayCheque ------------------")
+	Printf100ms("->Cheque.MaxAmount: %d\n", PayCheque.Cheque.Value)
+	Printf100ms("->Cheque.NodeNonce: %d\n", PayCheque.Cheque.NodeNonce)
+	Printf100ms("->Cheque.OperatorAddress: %s\n", PayCheque.Cheque.OperatorAddress)
+	Printf100ms("->Cheque.From: %s\n", PayCheque.Cheque.From)
+	Printf100ms("->Cheque.TokenAddress: %s\n", PayCheque.Cheque.TokenAddress)
+	Printf100ms("->PayCheque.ChequeSig: %x\n", PayCheque.ChequeSig)
+	Printf100ms("->PayCheque.PayValue: %d\n", PayCheque.PayValue)
+	Printf100ms("->PayCheque.To: %s\n", PayCheque.To)
 	Println100ms("----------------------------------------------------")
 }
 
@@ -46,15 +46,16 @@ func Printf100ms(format string, a ...interface{}) {
 // print command menu
 func PrintMenu() {
 	fmt.Println()
-	fmt.Println("======================= Menu =======================")
-	fmt.Println(" 1: [USER] Require purchase from operator")
-	fmt.Println(" 2: [USER] Send cheque to storage")
-	fmt.Println(" 3: [TEST] Call retrieve in storage")
-	fmt.Println(" 4: [OPERATOR] Call deploy cash")
-	fmt.Println(" 5: [STORAGE] Call applycheque in cash")
-	fmt.Println(" 6: [USER] List cheque table")
-	fmt.Println(" 7: [USER] Delete an entry of user db.")
-	fmt.Println("====================================================")
+
+	fmt.Println("              ======================= Menu =======================")
+	fmt.Println("               1: [OPERATOR]  Call deploy cash")
+	fmt.Println("               2: [USER]      Buy Cheque from operator")
+	fmt.Println("               3: [USER]      Send PayCheque to storage")
+	fmt.Println("               4: [USER]      List PayCheque table")
+	fmt.Println("               5: [USER]      Delete a cheque")
+	fmt.Println("               6: [STORAGE]   Call contract")
+	fmt.Println("               7: [TEST]      Call retrieve in storage")
+	fmt.Println("              ====================================================")
 
 	fullAddr := hostops.GetHostAddress(hostops.HostInfo)
 	Printf100ms("\nPeer addres: \n[ %s ]\n", fullAddr)
