@@ -87,7 +87,7 @@ func BuyCheckHandler(s network.Stream) error {
 
 	// sign Cheque by operator
 	var opSkByte = []byte("cb61e1519b560d994e4361b34c181656d916beb68513cff06c37eb7d258bf93d")
-	sig, err := sigapi.Sign(hash, opSkByte)
+	sigByte, err := sigapi.Sign(hash, opSkByte)
 	if err != nil {
 		log.Fatal("sign error:", err)
 	}
@@ -96,11 +96,16 @@ func BuyCheckHandler(s network.Stream) error {
 	if err != nil {
 		log.Fatal("get cash address error:", err)
 	}
-	fmt.Printf("-- cash address: %x\n", cashAddrByte)
+
+	if utils.DEBUG {
+		print.Printf100ms("sigByte:%x\n", sigByte)
+		print.Printf100ms("cashAddr:%x\n", cashAddrByte)
+		print.Printf100ms("ChequeMarshaled:%x\n", ChequeMarshaled)
+	}
 
 	// sig(65) | cash address(42) | cheque
 	var msg = []byte{}
-	msg = utils.MergeSlice(sig, cashAddrByte)
+	msg = utils.MergeSlice(sigByte, cashAddrByte)
 	msg = utils.MergeSlice(msg, ChequeMarshaled)
 
 	print.Println100ms("-> sending msg")
@@ -142,15 +147,15 @@ func SendCheckHandler(s network.Stream) error {
 	*/
 	// Read data method 3
 	// Caution: Need writer to close stream first.
-	in, err := ioutil.ReadAll(s)
+	PayChequeMarshaled, err := ioutil.ReadAll(s)
 	if err != nil {
 		log.Fatalln("Error reading :", err)
 		return err
 	}
 
-	// parse data
-	var sigByte = in[:65]
-	var PayChequeMarshaled = in[65:]
+	// // parse data
+	// var sigByte = in[:65]
+	// var PayChequeMarshaled = in[65:]
 
 	// unmarshal data
 	PayCheque := &pb.PayCheque{}
@@ -165,13 +170,15 @@ func SendCheckHandler(s network.Stream) error {
 	//===== verify signature of PayCheque(signed by user)
 
 	// get user address
-	userAddrByte, err := hex.DecodeString(PayCheque.Cheque.From)
+	fromAddrByte, err := hex.DecodeString(PayCheque.Cheque.From)
 	if err != nil {
 		panic("decode error")
 	}
 	// []byte to common.Address
-	From := common.BytesToAddress(userAddrByte)
+	From := common.BytesToAddress(fromAddrByte)
 
+	// get sig from pay cheque
+	sigByte := PayCheque.ChequeSig
 	// calc hash from PayCheque
 	hash := utils.CalcHash(PayCheque.Cheque.From, PayCheque.Cheque.NodeNonce, PayCheque.To, PayCheque.PayValue)
 
@@ -189,34 +196,38 @@ func SendCheckHandler(s network.Stream) error {
 
 		// wirte PayCheque into db
 		// create/open db
-		db, err := leveldb.OpenFile("./storage_data.db", nil)
+		db, err := leveldb.OpenFile("./storage_paycheque.db", nil)
 		if err != nil {
 			log.Fatal("opfen db error")
 		}
-		defer db.Close()
 
 		// gen Cheque key: To + nonce
 		bigNonce := big.NewInt(PayCheque.Cheque.NodeNonce)
-		var PayChequeKey []byte
-		PayChequeKey, err = utils.GenChequeKey(PayCheque.Cheque.To, bigNonce)
+		var ChequeKey []byte
+		ChequeKey, err = utils.GenChequeKey(PayCheque.Cheque.To, bigNonce)
 		if err != nil {
 			log.Fatal("GenChequeKey error:", err)
 		}
 
 		if utils.DEBUG {
 			fmt.Println("in Cmd2Handler.")
-			fmt.Printf("PayChequeKey: %x\n", PayChequeKey)
+			fmt.Printf("ChequeKey: %x\n", ChequeKey)
 		}
 
 		// use PayChequeKey as PayCheque id to store PayChequeMarshaled.
-		PayChequeMarshWithSig := utils.MergeSlice(sigByte, PayChequeMarshaled)
-		err = db.Put(PayChequeKey, PayChequeMarshWithSig, nil)
+		//PayChequeMarshWithSig := utils.MergeSlice(sigByte, PayChequeMarshaled)
+		err = db.Put(ChequeKey, PayChequeMarshaled, nil)
 		if err != nil {
 			print.Println100ms("db put data error")
 			return err
 		}
 
+		db.Close()
+
 	}
+
+	utils.UpdateStorageIndex()
+	utils.ListStorageCheque()
 
 	print.PrintMenu()
 	print.Println100ms("\n> Intput target address and cmd: ")

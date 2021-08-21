@@ -128,12 +128,12 @@ func GenChequeKey(addr string, nonce *big.Int) ([]byte, error) {
 }
 
 // Update Index
-func UpdateIndex() {
+func UpdateUserIndex() {
 	// clear index
 	Index = Index[0:0]
 
 	// create/open db
-	db, err := leveldb.OpenFile("./user_data.db", nil)
+	db, err := leveldb.OpenFile("./paycheque.db", nil)
 	if err != nil {
 		log.Fatal("opfen db error")
 	}
@@ -152,10 +152,10 @@ func UpdateIndex() {
 	}
 }
 
-// list data in PayCheque table
-func ListUserDB() {
+// user list data in pay cheque db
+func ListUserCheque() {
 	// create/open db
-	db, err := leveldb.OpenFile("./user_data.db", nil)
+	db, err := leveldb.OpenFile("./paycheque.db", nil)
 	if err != nil {
 		log.Fatal("opfen db error")
 	}
@@ -172,29 +172,110 @@ func ListUserDB() {
 	for id < len(Index) {
 
 		// get data
-		var purMarshalWithSig []byte
+		var PayChequeMarshaled []byte
 		keyByte, err := hex.DecodeString(Index[id])
 		if err != nil {
 			fmt.Println("decodeString error:", err.Error())
 			return
 		}
-		purMarshalWithSig, _ = db.Get(keyByte, nil)
-		//ChequeSig := purMarshalWithSig[:65]
-		ChequeMarshaled := purMarshalWithSig[65:]
+		PayChequeMarshaled, _ = db.Get(keyByte, nil)
 		// unmarshal it to get Cheque itself
-		Cheque := &pb.Cheque{}
-		if err := proto.Unmarshal(ChequeMarshaled, Cheque); err != nil {
+		PayCheque := &pb.PayCheque{}
+		if err := proto.Unmarshal(PayChequeMarshaled, PayCheque); err != nil {
 			log.Fatalln("Failed to parse check:", err)
 		}
 
 		// transmit to string
 		strID := strconv.Itoa(id)
-		strValue := strconv.FormatInt(Cheque.Value, 10)
-		strNonce := strconv.FormatInt(Cheque.NodeNonce, 10)
+		strValue := strconv.FormatInt(PayCheque.Cheque.Value, 10)
+		strNonce := strconv.FormatInt(PayCheque.Cheque.NodeNonce, 10)
 		value := map[string]string{
 			"ID":    strID,
-			"FROM":  Cheque.From,
-			"TO":    Cheque.To,
+			"FROM":  PayCheque.From,
+			"TO":    PayCheque.To,
+			"VALUE": strValue,
+			"NONCE": strNonce,
+		}
+		err = table.AddRow(value)
+		if err != nil {
+			log.Fatal(err.Error())
+			return
+		}
+		id++
+	}
+
+	//r, _ := table.Json(4)
+	//fmt.Println(r)
+	//table.CloseBorder()
+	table.PrintTable()
+}
+
+// Update Index
+func UpdateStorageIndex() {
+	// clear index
+	Index = Index[0:0]
+
+	// create/open db
+	db, err := leveldb.OpenFile("./storage_paycheque.db", nil)
+	if err != nil {
+		log.Fatal("opfen db error")
+	}
+	defer db.Close()
+
+	iter := db.NewIterator(nil, nil)
+	for iter.Next() {
+		keyByte := iter.Key()
+		Index = append(Index, hex.EncodeToString(keyByte))
+	}
+	iter.Release()
+	err = iter.Error()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+}
+
+// user list data in pay cheque db
+func ListStorageCheque() {
+	// create/open db
+	db, err := leveldb.OpenFile("./storage_paycheque.db", nil)
+	if err != nil {
+		log.Fatal("opfen db error")
+	}
+	defer db.Close()
+
+	// show table
+	table, err := gotable.Create("ID", "FROM", "TO", "VALUE", "NONCE")
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	// show table
+	var id int = 0
+	for id < len(Index) {
+
+		// get data
+		var PayChequeMarshaled []byte
+		keyByte, err := hex.DecodeString(Index[id])
+		if err != nil {
+			fmt.Println("decodeString error:", err.Error())
+			return
+		}
+		PayChequeMarshaled, _ = db.Get(keyByte, nil)
+		// unmarshal it to get Cheque itself
+		PayCheque := &pb.PayCheque{}
+		if err := proto.Unmarshal(PayChequeMarshaled, PayCheque); err != nil {
+			log.Fatalln("Failed to parse check:", err)
+		}
+
+		// transmit to string
+		strID := strconv.Itoa(id)
+		strValue := strconv.FormatInt(PayCheque.Cheque.Value, 10)
+		strNonce := strconv.FormatInt(PayCheque.Cheque.NodeNonce, 10)
+		value := map[string]string{
+			"ID":    strID,
+			"FROM":  PayCheque.From,
+			"TO":    PayCheque.To,
 			"VALUE": strValue,
 			"NONCE": strNonce,
 		}

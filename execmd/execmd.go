@@ -46,19 +46,26 @@ func ExeCmd2() {
 	}
 
 	// parse data
-	sigByte := in[:65]
-	cashAddrByte := in[65:107]
+	sigByte := in[:65]         //65
+	cashAddrByte := in[65:107] //42
 	ChequeMarshaled := in[107:]
-	fmt.Printf("cashAddr:%x\n", cashAddrByte)
+
+	if utils.DEBUG {
+		print.Printf100ms("sigByte:%x\n", sigByte)
+		print.Printf100ms("cashAddr:%x\n", cashAddrByte)
+		print.Printf100ms("ChequeMarshaled:%x\n", ChequeMarshaled)
+	}
 
 	// unmarshal
 	Cheque := &pb.Cheque{}
 	if err := proto.Unmarshal(ChequeMarshaled, Cheque); err != nil {
 		log.Fatalln("Failed to parse check:", err)
 	}
-	print.Printf100ms("--> Received Cheque:\n")
 
-	print.PrintCheque(Cheque)
+	if utils.DEBUG {
+		print.Printf100ms("--> Received Cheque:\n")
+		print.PrintCheque(Cheque)
+	}
 
 	// verify signature of Cheque, signed by operator
 
@@ -70,9 +77,11 @@ func ExeCmd2() {
 	// []byte to common.Address
 	opAddress := common.BytesToAddress(opAddrByte)
 
-	// calc hash
+	// calc hash for verify cheque sig
 	hash := utils.CalcHash(Cheque.From, Cheque.NodeNonce, "", 0)
-	print.Printf100ms("Cheque receive, hash: %x\n", hash)
+	if utils.DEBUG {
+		print.Printf100ms("Cheque receive, hash: %x\n", hash)
+	}
 
 	// verify Cheque signature
 	ok, _ := sigapi.Verify(hash, sigByte, opAddress)
@@ -83,17 +92,17 @@ func ExeCmd2() {
 		print.Println100ms("<signature of Cheque verify success>")
 
 		// create/open db
-		db, err := leveldb.OpenFile("./user_data.db", nil)
+		db, err := leveldb.OpenFile("./paycheque.db", nil)
 		if err != nil {
 			log.Fatal("opfen db error")
 		}
 
-		// gen Cheque key: To + nonce
 		if utils.DEBUG {
-			fmt.Printf("storage address: %s\n", Cheque.To)
-			fmt.Printf("nonce: %d\n", Cheque.NodeNonce)
+			print.Printf100ms("storage address: %s\n", Cheque.To)
+			print.Printf100ms("nonce: %d\n", Cheque.NodeNonce)
 		}
 
+		// Cheque key: To + nonce
 		bigNonce := big.NewInt(Cheque.NodeNonce)
 		ChequeKey, err := utils.GenChequeKey(Cheque.To, bigNonce)
 		if err != nil {
@@ -102,30 +111,53 @@ func ExeCmd2() {
 		}
 
 		if utils.DEBUG {
-			fmt.Printf("ChequeKey: %x\n", ChequeKey)
+			print.Printf100ms("ChequeKey: %x\n", ChequeKey)
 		}
 
-		// use ChequeHash as Cheque id to store ChequeMarshaled.
-		// store Cheque_marshaled
-		ChequeMarshWithSig := utils.MergeSlice(sigByte, ChequeMarshaled)
-		err = db.Put(ChequeKey, ChequeMarshWithSig, nil)
+		// construct pay cheque with initial payvalue=0
+		PayCheque := &pb.PayCheque{}
+		PayCheque.Cheque = Cheque
+		PayCheque.ChequeSig = sigByte
+		PayCheque.CashAddress = hex.EncodeToString(cashAddrByte)
+		PayCheque.From = Cheque.From
+		PayCheque.To = Cheque.To
+		PayCheque.PayValue = 0
+
+		// serialize paycheque
+		var PayChequeMarshaled []byte
+		PayChequeMarshaled, err = proto.Marshal(PayCheque)
 		if err != nil {
-			print.Println100ms("db put data error")
+			print.Println100ms("marshal pay cheque failed when user store it.")
 			return
 		}
+		err = db.Put(ChequeKey, PayChequeMarshaled, nil)
+		if err != nil {
+			print.Println100ms("db put pay cheque data error")
+			return
+		}
+
+		// // use ChequeHash as Cheque id to store ChequeMarshaled.
+		// ChequeMarshWithSig := utils.MergeSlice(sigByte, ChequeMarshaled)
+		// err = db.Put(ChequeKey, ChequeMarshWithSig, nil)
+		// if err != nil {
+		// 	print.Println100ms("db put data error")
+		// 	return
+		// }
+
+		//
 		db.Close()
 
 		// show table
-		utils.UpdateIndex()
-		utils.ListUserDB()
+		utils.UpdateUserIndex()
+		utils.ListUserCheque()
 	}
 
 }
 
-// user send PayCheque to storage
+// user send marshaled PayCheques to storage
 func ExeCmd3() {
 	// create/open db
-	db, err := leveldb.OpenFile("./user_data.db", nil)
+	db, err := leveldb.OpenFile("./paycheque.db", nil)
 	if err != nil {
 		log.Fatal("opfen db error")
 	}
@@ -146,30 +178,36 @@ loop:
 		// Remember that the contents of the returned slice should not be modified, and
 		// only valid until the next call to Next.
 		key := iter.Key()
-		purMarshalWithSig := iter.Value()
-		fmt.Printf(("Cheque key: %x\n"), key)
+		PayChequeMarshaled := iter.Value()
+		if utils.DEBUG {
+			print.Printf100ms("DEBUG> Cheque key: %x\n", key)
+		}
 
-		ChequeSig := purMarshalWithSig[:65]
-		ChequeMarshaled := purMarshalWithSig[65:]
+		// ChequeSig := purMarshalWithSig[:65]
+		// ChequeMarshaled := purMarshalWithSig[65:]
 
 		// unmarshal it to get Cheque itself
-		Cheque := &pb.Cheque{}
-		if err := proto.Unmarshal(ChequeMarshaled, Cheque); err != nil {
-			log.Fatalln("Failed to parse check:", err)
+		PayCheque := &pb.PayCheque{}
+		if err := proto.Unmarshal(PayChequeMarshaled, PayCheque); err != nil {
+			log.Fatalln("Failed to parse pay check:", err)
+		}
+
+		if utils.DEBUG {
+			print.Println100ms("received pay cheque:")
+			print.PrintPayCheque(PayCheque)
 		}
 
 		// PayCheque should be created, signed and sent by user
 
 		// create PayCheque
-		PayCheque := &pb.PayCheque{}
-		PayCheque.Cheque = Cheque
-		PayCheque.ChequeSig = ChequeSig
-		PayCheque.PayValue = 10 //wei
-		PayCheque.To = "b213d01542d129806d664248a380db8b12059061"
+		//PayCheque.PayValue = 10 // 10 for test
+		//PayCheque.To = "b213d01542d129806d664248a380db8b12059061"
 
 		// calc hash from PayCheque
 		hash := utils.CalcHash(PayCheque.Cheque.From, PayCheque.Cheque.NodeNonce, PayCheque.To, PayCheque.PayValue)
-		print.Printf100ms("hash: %x\n", hash)
+		if utils.DEBUG {
+			print.Printf100ms("DEBUG> hash: %x\n", hash)
+		}
 		// sign PayCheque by user' sk
 		// user address: 1ab6a9f2b90004c1269563b5da391250ede3c114
 		var userSkByte = []byte("b91c265cabae210642d66f9d59137eac2fab2674f4c1c88df3b8e9e6c1f74f9f")
@@ -187,27 +225,28 @@ loop:
 			print.Printf100ms("DEBUG> signature: %x\n", PayChequeSig)
 		}
 
-		// serialize
-		PayChequeMarshaled, err := proto.Marshal(PayCheque)
-		if err != nil {
-			log.Fatalln("Failed to encode PayCheque:", err)
-		}
+		// // serialize
+		// PayChequeMarshaled, err := proto.Marshal(PayCheque)
+		// if err != nil {
+		// 	log.Fatalln("Failed to encode PayCheque:", err)
+		// }
 
-		// construct PayCheque message: signature(65 bytes) | marshaled cheqe
-		PayChequeMsg := utils.MergeSlice(PayChequeSig, PayChequeMarshaled)
+		// // construct PayCheque message: signature(65 bytes) | marshaled cheqe
+		// PayChequeMsg := utils.MergeSlice(PayChequeSig, PayChequeMarshaled)
 
 		// send PayCheque msg to storage
 		print.Println100ms("--> user sending PayCheque to storage")
-		_, err = s.Write(PayChequeMsg)
+		_, err = s.Write(PayChequeMarshaled)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
+		// close stream
 		s.Close()
 
 		for {
-			fmt.Println("continue?(y/n)")
+			fmt.Println("continue to send next paychque ?(y/n)")
 			var ctn string
 			fmt.Scanf("%s", &ctn)
 			switch ctn {
@@ -233,15 +272,15 @@ loop:
 
 // list user_db
 func ExeCmd4() {
-	utils.UpdateIndex()
-	utils.ListUserDB()
+	utils.UpdateUserIndex()
+	utils.ListUserCheque()
 }
 
 // delete an entry of user db
 func ExeCmd5() {
 
-	utils.UpdateIndex()
-	utils.ListUserDB()
+	utils.UpdateUserIndex()
+	utils.ListUserCheque()
 
 	db, err := leveldb.OpenFile("./user_data.db", nil)
 	if err != nil {
@@ -270,8 +309,8 @@ func ExeCmd5() {
 
 	db.Close()
 
-	utils.UpdateIndex()
-	utils.ListUserDB()
+	utils.UpdateUserIndex()
+	utils.ListUserCheque()
 }
 
 // call cash contract

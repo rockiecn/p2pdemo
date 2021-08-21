@@ -26,7 +26,9 @@ func PrintPayCheque(PayCheque *pb.PayCheque) {
 	Printf100ms("->Cheque.From: %s\n", PayCheque.Cheque.From)
 	Printf100ms("->Cheque.TokenAddress: %s\n", PayCheque.Cheque.TokenAddress)
 	Printf100ms("->PayCheque.ChequeSig: %x\n", PayCheque.ChequeSig)
+	Printf100ms("->PayCheque.CashAddress: %s\n", PayCheque.CashAddress)
 	Printf100ms("->PayCheque.PayValue: %d\n", PayCheque.PayValue)
+	Printf100ms("->PayCheque.From: %s\n", PayCheque.From)
 	Printf100ms("->PayCheque.To: %s\n", PayCheque.To)
 	Println100ms("----------------------------------------------------")
 }
