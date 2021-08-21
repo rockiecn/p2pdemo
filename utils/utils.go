@@ -146,6 +146,7 @@ func UpdatePayChequeIndex() {
 
 // user list data in pay cheque db
 func ListPayCheque() {
+	UpdatePayChequeIndex()
 	// create/open db
 	db, err := leveldb.OpenFile("./paycheque.db", nil)
 	if err != nil {
@@ -154,7 +155,7 @@ func ListPayCheque() {
 	defer db.Close()
 
 	// show table
-	table, err := gotable.Create("ID", "FROM", "TO", "VALUE", "NONCE", "PAYVALUE")
+	table, err := gotable.Create("ID", "FROM", "TO", "VALUE", "PAYVALUE", "NONCE")
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -180,15 +181,17 @@ func ListPayCheque() {
 		// transmit to string
 		strID := strconv.Itoa(id)
 		strValue := strconv.FormatInt(PayCheque.Cheque.Value, 10)
-		strNonce := strconv.FormatInt(PayCheque.Cheque.NodeNonce, 10)
 		strPayValue := strconv.FormatInt(PayCheque.PayValue, 10)
+		strNonce := strconv.FormatInt(PayCheque.Cheque.NodeNonce, 10)
+
+		//
 		value := map[string]string{
 			"ID":       strID,
 			"FROM":     PayCheque.From,
 			"TO":       PayCheque.To,
 			"VALUE":    strValue,
-			"NONCE":    strNonce,
 			"PAYVALUE": strPayValue,
+			"NONCE":    strNonce,
 		}
 		err = table.AddRow(value)
 		if err != nil {

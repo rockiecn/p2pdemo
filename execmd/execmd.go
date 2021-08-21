@@ -154,7 +154,6 @@ func BuyCheque() {
 		db.Close()
 
 		// show table
-		utils.UpdatePayChequeIndex()
 		utils.ListPayCheque()
 	}
 
@@ -281,15 +280,13 @@ loop:
 }
 
 // list user_db
-func ListUserDB() {
-	utils.UpdatePayChequeIndex()
+func ListPayChequeDB() {
 	utils.ListPayCheque()
 }
 
 // delete an entry of user db
 func DeleteChequeByID() {
 
-	utils.UpdatePayChequeIndex()
 	utils.ListPayCheque()
 
 	db, err := leveldb.OpenFile("./paycheque.db", nil)
@@ -319,7 +316,6 @@ func DeleteChequeByID() {
 
 	db.Close()
 
-	utils.UpdatePayChequeIndex()
 	utils.ListPayCheque()
 }
 

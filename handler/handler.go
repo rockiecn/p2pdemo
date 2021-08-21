@@ -228,7 +228,6 @@ func SendCheckHandler(s network.Stream) error {
 
 	}
 
-	utils.UpdatePayChequeIndex()
 	utils.ListPayCheque()
 
 	print.PrintMenu()

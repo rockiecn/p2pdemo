@@ -89,14 +89,16 @@ func main() {
 			execmd.SendPayCheque()
 		case "4":
 			// deploy cash
-			execmd.ListUserDB()
+			execmd.ListPayChequeDB()
 		case "5":
 			// call cash contract
 			execmd.DeleteChequeByID()
 		case "6":
+
+		case "7":
 			// list user_db
 			execmd.CallCash()
-		case "7":
+		case "8":
 			// delete user db
 			execmd.TestCall()
 		}
