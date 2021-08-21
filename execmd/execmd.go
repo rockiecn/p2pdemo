@@ -15,6 +15,7 @@ import (
 
 	"github.com/rockiecn/interact/callstorage"
 	"github.com/rockiecn/p2pdemo/callcash"
+	"github.com/rockiecn/p2pdemo/global"
 	"github.com/rockiecn/p2pdemo/hostops"
 	"github.com/rockiecn/p2pdemo/pb"
 	"github.com/rockiecn/p2pdemo/print"
@@ -23,15 +24,20 @@ import (
 )
 
 // deploy cash
-func ExeCmd1() {
+func DeployCash() {
 	print.Println100ms("call deploy cash")
 	callcash.CallDeploy()
 }
 
 // user buy Cheque from operator
-func ExeCmd2() {
-	// connect to peer, get stream
-	s, err := hostops.HostInfo.NewStream(context.Background(), utils.Peerid, "/1")
+func BuyCheque() {
+
+	if !global.RemoteExist {
+		print.Println100ms("No remote peer exist, record one as operator.")
+		return
+	}
+	// connect to operator , get stream
+	s, err := hostops.HostInfo.NewStream(context.Background(), global.Peerid, "/1")
 	if err != nil {
 		log.Println(err)
 		return
@@ -50,7 +56,7 @@ func ExeCmd2() {
 	cashAddrByte := in[65:107] //42
 	ChequeMarshaled := in[107:]
 
-	if utils.DEBUG {
+	if global.DEBUG {
 		print.Printf100ms("sigByte:%x\n", sigByte)
 		print.Printf100ms("cashAddr:%x\n", cashAddrByte)
 		print.Printf100ms("ChequeMarshaled:%x\n", ChequeMarshaled)
@@ -62,7 +68,7 @@ func ExeCmd2() {
 		log.Fatalln("Failed to parse check:", err)
 	}
 
-	if utils.DEBUG {
+	if global.DEBUG {
 		print.Printf100ms("--> Received Cheque:\n")
 		print.PrintCheque(Cheque)
 	}
@@ -79,7 +85,7 @@ func ExeCmd2() {
 
 	// calc hash for verify cheque sig
 	hash := utils.CalcHash(Cheque.From, Cheque.NodeNonce, "", 0)
-	if utils.DEBUG {
+	if global.DEBUG {
 		print.Printf100ms("Cheque receive, hash: %x\n", hash)
 	}
 
@@ -97,7 +103,7 @@ func ExeCmd2() {
 			log.Fatal("opfen db error")
 		}
 
-		if utils.DEBUG {
+		if global.DEBUG {
 			print.Printf100ms("storage address: %s\n", Cheque.To)
 			print.Printf100ms("nonce: %d\n", Cheque.NodeNonce)
 		}
@@ -110,7 +116,7 @@ func ExeCmd2() {
 			return
 		}
 
-		if utils.DEBUG {
+		if global.DEBUG {
 			print.Printf100ms("ChequeKey: %x\n", ChequeKey)
 		}
 
@@ -148,14 +154,18 @@ func ExeCmd2() {
 		db.Close()
 
 		// show table
-		utils.UpdateUserIndex()
-		utils.ListUserCheque()
+		utils.UpdatePayChequeIndex()
+		utils.ListPayCheque()
 	}
 
 }
 
 // user send marshaled PayCheques to storage
-func ExeCmd3() {
+func SendPayCheque() {
+	if !global.RemoteExist {
+		print.Println100ms("No remote peer exist, record one as storage.")
+		return
+	}
 	// create/open db
 	db, err := leveldb.OpenFile("./paycheque.db", nil)
 	if err != nil {
@@ -168,8 +178,8 @@ func ExeCmd3() {
 loop:
 	for iter.Next() {
 
-		print.Printf100ms("Opening stream to peerID: %v\n", utils.Peerid)
-		s, err := hostops.HostInfo.NewStream(context.Background(), utils.Peerid, "/2")
+		print.Printf100ms("Opening stream to peerID: %v\n", global.Peerid)
+		s, err := hostops.HostInfo.NewStream(context.Background(), global.Peerid, "/2")
 		if err != nil {
 			log.Println(err)
 			return
@@ -179,7 +189,7 @@ loop:
 		// only valid until the next call to Next.
 		key := iter.Key()
 		PayChequeMarshaled := iter.Value()
-		if utils.DEBUG {
+		if global.DEBUG {
 			print.Printf100ms("DEBUG> Cheque key: %x\n", key)
 		}
 
@@ -192,7 +202,7 @@ loop:
 			log.Fatalln("Failed to parse pay check:", err)
 		}
 
-		if utils.DEBUG {
+		if global.DEBUG {
 			print.Println100ms("received pay cheque:")
 			print.PrintPayCheque(PayCheque)
 		}
@@ -205,7 +215,7 @@ loop:
 
 		// calc hash from PayCheque
 		hash := utils.CalcHash(PayCheque.Cheque.From, PayCheque.Cheque.NodeNonce, PayCheque.To, PayCheque.PayValue)
-		if utils.DEBUG {
+		if global.DEBUG {
 			print.Printf100ms("DEBUG> hash: %x\n", hash)
 		}
 		// sign PayCheque by user' sk
@@ -216,7 +226,7 @@ loop:
 			panic("sign error")
 		}
 
-		if utils.DEBUG {
+		if global.DEBUG {
 			// for debug
 			print.Printf100ms("DEBUG> From: %s\n", PayCheque.Cheque.From)
 			print.Printf100ms("DEBUG> NodeNonce: %d\n", PayCheque.Cheque.NodeNonce)
@@ -271,31 +281,31 @@ loop:
 }
 
 // list user_db
-func ExeCmd4() {
-	utils.UpdateUserIndex()
-	utils.ListUserCheque()
+func ListUserDB() {
+	utils.UpdatePayChequeIndex()
+	utils.ListPayCheque()
 }
 
 // delete an entry of user db
-func ExeCmd5() {
+func DeleteChequeByID() {
 
-	utils.UpdateUserIndex()
-	utils.ListUserCheque()
+	utils.UpdatePayChequeIndex()
+	utils.ListPayCheque()
 
-	db, err := leveldb.OpenFile("./user_data.db", nil)
+	db, err := leveldb.OpenFile("./paycheque.db", nil)
 	if err != nil {
 		log.Fatal("opfen db error")
 	}
 	fmt.Println("Input ID to delete:")
 	var uID uint
 	fmt.Scanf("%d", &uID)
-	if utils.Index[uID] == "" {
+	if global.Index[uID] == "" {
 		fmt.Println("ID not exist")
 		return
 	}
 
 	var keyByte []byte
-	keyByte, err = hex.DecodeString(utils.Index[uID])
+	keyByte, err = hex.DecodeString(global.Index[uID])
 	if err != nil {
 		fmt.Println("decode string error: ", err)
 	}
@@ -309,12 +319,12 @@ func ExeCmd5() {
 
 	db.Close()
 
-	utils.UpdateUserIndex()
-	utils.ListUserCheque()
+	utils.UpdatePayChequeIndex()
+	utils.ListPayCheque()
 }
 
 // call cash contract
-func ExeCmd6() {
+func CallCash() {
 	print.Println100ms("call applyPayCheque in cash")
 
 	// read PayCheque data from db
@@ -388,7 +398,7 @@ func ExeCmd6() {
 	}
 }
 
-func ExeCmd7() {
+func TestCall() {
 	print.Println100ms("call retrieve")
 	callstorage.CallRetrieve()
 }

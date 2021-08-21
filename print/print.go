@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/rockiecn/p2pdemo/global"
 	"github.com/rockiecn/p2pdemo/hostops"
 	"github.com/rockiecn/p2pdemo/pb"
 )
@@ -48,17 +49,23 @@ func Printf100ms(format string, a ...interface{}) {
 // print command menu
 func PrintMenu() {
 	fmt.Println()
-
+	if global.RemoteExist {
+		fmt.Printf("-> Remote Peer ID: %s\n", global.Peerid)
+	} else {
+		fmt.Println("-> No emote Peer")
+	}
+	fmt.Println()
 	fmt.Println("              ======================= Menu =======================")
-	fmt.Println("               1: [OPERATOR]  Call deploy cash")
-	fmt.Println("               2: [USER]      Buy Cheque from operator")
-	fmt.Println("               3: [USER]      Send PayCheque to storage")
-	fmt.Println("               4: [USER]      List PayCheque table")
-	fmt.Println("               5: [USER]      Delete a cheque")
-	fmt.Println("               6: [STORAGE]   Call contract")
-	fmt.Println("               7: [TEST]      Call retrieve in storage")
+	fmt.Println("               0 : [ALL]       Record remote peer")
+	fmt.Println("               1-: [OPERATOR]  Call deploy cash")
+	fmt.Println("               2*: [USER]      Buy Cheque from operator")
+	fmt.Println("               3*: [USER]      Send PayCheque to storage")
+	fmt.Println("               4 : [USER]      List PayCheque table")
+	fmt.Println("               5 : [USER]      Delete a paycheque from db")
+	fmt.Println("               6-: [STORAGE]   Call contract")
+	fmt.Println("               7-: [TEST]      Call retrieve in storage")
 	fmt.Println("              ====================================================")
 
 	fullAddr := hostops.GetHostAddress(hostops.HostInfo)
-	Printf100ms("\nPeer addres: \n[ %s ]\n", fullAddr)
+	Printf100ms("\nLocal Peer addres: \n[ %s ]\n", fullAddr)
 }

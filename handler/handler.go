@@ -9,11 +9,13 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/syndtr/goleveldb/leveldb"
+
+	"github.com/rockiecn/p2pdemo/global"
 	"github.com/rockiecn/p2pdemo/pb"
 	"github.com/rockiecn/p2pdemo/print"
 	"github.com/rockiecn/p2pdemo/sigapi"
 	"github.com/rockiecn/p2pdemo/utils"
-	"github.com/syndtr/goleveldb/leveldb"
 
 	// "github.com/rockiecn/sigtest/sigapi"
 	// "github.com/rockiecn/sigtest/utils"
@@ -97,7 +99,7 @@ func BuyCheckHandler(s network.Stream) error {
 		log.Fatal("get cash address error:", err)
 	}
 
-	if utils.DEBUG {
+	if global.DEBUG {
 		print.Printf100ms("sigByte:%x\n", sigByte)
 		print.Printf100ms("cashAddr:%x\n", cashAddrByte)
 		print.Printf100ms("ChequeMarshaled:%x\n", ChequeMarshaled)
@@ -209,7 +211,7 @@ func SendCheckHandler(s network.Stream) error {
 			log.Fatal("GenChequeKey error:", err)
 		}
 
-		if utils.DEBUG {
+		if global.DEBUG {
 			fmt.Println("in Cmd2Handler.")
 			fmt.Printf("ChequeKey: %x\n", ChequeKey)
 		}
@@ -226,8 +228,8 @@ func SendCheckHandler(s network.Stream) error {
 
 	}
 
-	utils.UpdateStorageIndex()
-	utils.ListStorageCheque()
+	utils.UpdatePayChequeIndex()
+	utils.ListPayCheque()
 
 	print.PrintMenu()
 	print.Println100ms("\n> Intput target address and cmd: ")

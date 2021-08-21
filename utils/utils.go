@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"context"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
@@ -11,21 +10,14 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/libp2p/go-libp2p-core/peer"
 
 	"github.com/liushuochen/gotable"
 	"github.com/syndtr/goleveldb/leveldb"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/rockiecn/p2pdemo/global"
 	"github.com/rockiecn/p2pdemo/pb"
 )
-
-const DEBUG bool = true
-
-// package level variable
-var Ctx context.Context
-var Peerid peer.ID = ""
-var Index []string
 
 /*
 // Str2Byte - convert string to []byte
@@ -118,7 +110,7 @@ func GenChequeKey(addr string, nonce *big.Int) ([]byte, error) {
 	addrByte := []byte(addr)
 
 	keyByte := MergeSlice(addrByte, nonce.Bytes())
-	if DEBUG {
+	if global.DEBUG {
 		fmt.Printf("in GenChequeKey\n")
 		fmt.Printf("storage addr:%s\n", []byte(addr))
 		fmt.Printf("nonce:%x\n", nonce.Bytes())
@@ -128,9 +120,9 @@ func GenChequeKey(addr string, nonce *big.Int) ([]byte, error) {
 }
 
 // Update Index
-func UpdateUserIndex() {
+func UpdatePayChequeIndex() {
 	// clear index
-	Index = Index[0:0]
+	global.Index = global.Index[0:0]
 
 	// create/open db
 	db, err := leveldb.OpenFile("./paycheque.db", nil)
@@ -142,7 +134,7 @@ func UpdateUserIndex() {
 	iter := db.NewIterator(nil, nil)
 	for iter.Next() {
 		keyByte := iter.Key()
-		Index = append(Index, hex.EncodeToString(keyByte))
+		global.Index = append(global.Index, hex.EncodeToString(keyByte))
 	}
 	iter.Release()
 	err = iter.Error()
@@ -153,7 +145,7 @@ func UpdateUserIndex() {
 }
 
 // user list data in pay cheque db
-func ListUserCheque() {
+func ListPayCheque() {
 	// create/open db
 	db, err := leveldb.OpenFile("./paycheque.db", nil)
 	if err != nil {
@@ -162,18 +154,18 @@ func ListUserCheque() {
 	defer db.Close()
 
 	// show table
-	table, err := gotable.Create("ID", "FROM", "TO", "VALUE", "NONCE")
+	table, err := gotable.Create("ID", "FROM", "TO", "VALUE", "NONCE", "PAYVALUE")
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
 	// show table
 	var id int = 0
-	for id < len(Index) {
+	for id < len(global.Index) {
 
 		// get data
 		var PayChequeMarshaled []byte
-		keyByte, err := hex.DecodeString(Index[id])
+		keyByte, err := hex.DecodeString(global.Index[id])
 		if err != nil {
 			fmt.Println("decodeString error:", err.Error())
 			return
@@ -189,95 +181,14 @@ func ListUserCheque() {
 		strID := strconv.Itoa(id)
 		strValue := strconv.FormatInt(PayCheque.Cheque.Value, 10)
 		strNonce := strconv.FormatInt(PayCheque.Cheque.NodeNonce, 10)
+		strPayValue := strconv.FormatInt(PayCheque.PayValue, 10)
 		value := map[string]string{
-			"ID":    strID,
-			"FROM":  PayCheque.From,
-			"TO":    PayCheque.To,
-			"VALUE": strValue,
-			"NONCE": strNonce,
-		}
-		err = table.AddRow(value)
-		if err != nil {
-			log.Fatal(err.Error())
-			return
-		}
-		id++
-	}
-
-	//r, _ := table.Json(4)
-	//fmt.Println(r)
-	//table.CloseBorder()
-	table.PrintTable()
-}
-
-// Update Index
-func UpdateStorageIndex() {
-	// clear index
-	Index = Index[0:0]
-
-	// create/open db
-	db, err := leveldb.OpenFile("./storage_paycheque.db", nil)
-	if err != nil {
-		log.Fatal("opfen db error")
-	}
-	defer db.Close()
-
-	iter := db.NewIterator(nil, nil)
-	for iter.Next() {
-		keyByte := iter.Key()
-		Index = append(Index, hex.EncodeToString(keyByte))
-	}
-	iter.Release()
-	err = iter.Error()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-}
-
-// user list data in pay cheque db
-func ListStorageCheque() {
-	// create/open db
-	db, err := leveldb.OpenFile("./storage_paycheque.db", nil)
-	if err != nil {
-		log.Fatal("opfen db error")
-	}
-	defer db.Close()
-
-	// show table
-	table, err := gotable.Create("ID", "FROM", "TO", "VALUE", "NONCE")
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	// show table
-	var id int = 0
-	for id < len(Index) {
-
-		// get data
-		var PayChequeMarshaled []byte
-		keyByte, err := hex.DecodeString(Index[id])
-		if err != nil {
-			fmt.Println("decodeString error:", err.Error())
-			return
-		}
-		PayChequeMarshaled, _ = db.Get(keyByte, nil)
-		// unmarshal it to get Cheque itself
-		PayCheque := &pb.PayCheque{}
-		if err := proto.Unmarshal(PayChequeMarshaled, PayCheque); err != nil {
-			log.Fatalln("Failed to parse check:", err)
-		}
-
-		// transmit to string
-		strID := strconv.Itoa(id)
-		strValue := strconv.FormatInt(PayCheque.Cheque.Value, 10)
-		strNonce := strconv.FormatInt(PayCheque.Cheque.NodeNonce, 10)
-		value := map[string]string{
-			"ID":    strID,
-			"FROM":  PayCheque.From,
-			"TO":    PayCheque.To,
-			"VALUE": strValue,
-			"NONCE": strNonce,
+			"ID":       strID,
+			"FROM":     PayCheque.From,
+			"TO":       PayCheque.To,
+			"VALUE":    strValue,
+			"NONCE":    strNonce,
+			"PAYVALUE": strPayValue,
 		}
 		err = table.AddRow(value)
 		if err != nil {

@@ -17,16 +17,16 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 
 	"github.com/rockiecn/p2pdemo/execmd"
+	"github.com/rockiecn/p2pdemo/global"
 	"github.com/rockiecn/p2pdemo/handler"
 	"github.com/rockiecn/p2pdemo/hostops"
 	"github.com/rockiecn/p2pdemo/print"
-	"github.com/rockiecn/p2pdemo/utils"
 )
 
 // run listener
 func init() {
 	var Cancel context.CancelFunc
-	utils.Ctx, Cancel = context.WithCancel(context.Background())
+	global.Ctx, Cancel = context.WithCancel(context.Background())
 	defer Cancel()
 
 	// Change to INFO for extra info
@@ -49,17 +49,16 @@ func init() {
 
 	// run listener
 	listenerDone := make(chan int)
-	go runListener(utils.Ctx, hostops.HostInfo, port, listenerDone)
+	go runListener(global.Ctx, hostops.HostInfo, port, listenerDone)
 	<-listenerDone //wait until runlistener complete
 }
 
 //
 func main() {
 
-	fullAddr := hostops.GetHostAddress(hostops.HostInfo)
-	fmt.Printf("\nPeer addres: \n[ %s ]\n", fullAddr)
-
-	connPeer()
+	// local peer
+	//fullAddr := hostops.GetHostAddress(hostops.HostInfo)
+	//fmt.Printf("\nLocal peer address: \n[ %s ]\n", fullAddr)
 
 	// run commandline
 	for {
@@ -77,31 +76,29 @@ func main() {
 		// execute command with cmd id
 		//exeCommand(Ctx, hostops.HostInfo, strTarget, strCmd)
 		switch strCmd {
+		case "0":
+			recoredRemote()
 		case "1":
 			// operator send purchase to user
-			execmd.ExeCmd1()
+			execmd.DeployCash()
 		case "2":
 			// user send cheque to storage
-			execmd.ExeCmd2()
+			execmd.BuyCheque()
 		case "3":
 			// test
-			execmd.ExeCmd3()
+			execmd.SendPayCheque()
 		case "4":
 			// deploy cash
-			execmd.ExeCmd4()
+			execmd.ListUserDB()
 		case "5":
 			// call cash contract
-			execmd.ExeCmd5()
+			execmd.DeleteChequeByID()
 		case "6":
 			// list user_db
-			execmd.ExeCmd6()
+			execmd.CallCash()
 		case "7":
 			// delete user db
-			execmd.ExeCmd7()
-		case "8":
-			// delete an entry of user_db
-		case "9":
-			// delete an entry of storage_db
+			execmd.TestCall()
 		}
 	}
 }
@@ -134,6 +131,29 @@ func runListener(ctx context.Context, ha host.Host, listenPort int, listenerDone
 	listenerDone <- 0 // signal main to continue
 }
 
+// connect to a peer
+func recoredRemote() {
+	var strTarget string
+
+	print.Println100ms("-> Intput peer address: ")
+	fmt.Scanf("%s", &strTarget)
+	if strTarget == "" {
+		print.Printf100ms("invalid input, need target address.\n")
+		return
+	}
+
+	// parse peerid
+	var err error
+	global.Peerid, err = parsePeerID(hostops.HostInfo, strTarget)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	global.RemoteExist = true
+	print.Println100ms("-> Recorded.")
+}
+
 // parse peerid from targetPeer, and add it to peerstore
 func parsePeerID(ha host.Host, targetPeer string) (peer.ID, error) {
 	// string to ma
@@ -164,24 +184,4 @@ func parsePeerID(ha host.Host, targetPeer string) (peer.ID, error) {
 	ha.Peerstore().AddAddr(peerid, targetAddr, peerstore.PermanentAddrTTL)
 
 	return peerid, nil
-}
-
-// connect to a peer
-func connPeer() {
-	var strTarget string
-	print.Println100ms("-> Now connect to a peer")
-	print.Println100ms("-> Intput peer address: ")
-	fmt.Scanf("%s", &strTarget)
-	if strTarget == "" {
-		print.Printf100ms("invalid input, need target address.\n")
-		return
-	}
-
-	// parse peerid
-	var err error
-	utils.Peerid, err = parsePeerID(hostops.HostInfo, strTarget)
-	if err != nil {
-		log.Println(err)
-		return
-	}
 }
