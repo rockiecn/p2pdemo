@@ -2,6 +2,7 @@ package print
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/rockiecn/p2pdemo/global"
@@ -37,32 +38,49 @@ func PrintPayCheque(PayCheque *pb.PayCheque) {
 // println with 100 ms delay
 func Println100ms(str string) {
 	fmt.Println(str)
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 }
 
 // printf with 100 ms delay
 func Printf100ms(format string, a ...interface{}) {
 	fmt.Printf(format, a...)
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 }
 
 // print command menu
 func PrintMenu() {
-	fmt.Println()
+
+	var showPeer string
+	var err error
 	if global.RemoteExist {
-		fmt.Printf("-> Remote Peer ID: %s\n", global.Peerid)
+		showPeer = global.Peerid.Pretty()
 	} else {
-		fmt.Println("-> No emote Peer")
+		//showPeer = "No emote Peer"
+		// string to peer.ID
+		showPeer = "No emote Peer"
+		if err != nil {
+			log.Println(err)
+			return
+		}
 	}
+
 	fmt.Println()
+	fmt.Println()
+	fmt.Println()
+	fmt.Println()
+	fmt.Println("+++++++++++++++++++++")
+	fmt.Printf("| Welcom to p2pdemo |  Remote Peer: %s\n", showPeer)
+	fmt.Println("+++++++++++++++++++++")
+	fmt.Println()
+
 	fmt.Println("              ======================= Menu =======================")
 	fmt.Println("               0-: [ALL]       Record remote peer")
 	fmt.Println("               1+: [OPERATOR]  Deploy cash contract")
-	fmt.Println("               2*: [USER]      Buy Cheque from operator")
+	fmt.Println("               2*: [USER]      Get Cheque from operator")
 	fmt.Println("               3*: [USER]      Send PayCheque to storage")
-	fmt.Println("               4+: [USER]      List PayCheque table")
+	fmt.Println("               4-: [USER]      List PayCheque table")
 	fmt.Println("               5-: [USER]      Delete a paycheque from db")
-	fmt.Println("               6*: [USER]      Show process")
+	fmt.Println("               6*: [USER]      Increase payvalue and send cheque")
 	fmt.Println("               7+: [STORAGE]   Call apply cheque")
 	fmt.Println("               8+: [TEST]      Call retrieve in storage")
 	fmt.Println("              ====================================================")

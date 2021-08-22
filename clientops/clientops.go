@@ -23,7 +23,7 @@ import (
 func GetClient(endPoint string) (*ethclient.Client, error) {
 	rpcClient, err := rpc.Dial(endPoint)
 	if err != nil {
-		log.Println("rpc.Dial err:", err)
+		fmt.Println("rpc.Dial err:", err)
 		return nil, err
 	}
 

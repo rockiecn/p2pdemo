@@ -19,13 +19,14 @@ import (
 )
 
 // CallApplyCheque - send tx to contract to call apply cheque method.
-func CallApplyPayCheque(
-	userAddr common.Address,
-	nonce *big.Int,
-	stAddr common.Address,
-	PayValue *big.Int,
-	sig []byte) error {
-	fmt.Println("HOST: ", hostops.HOST)
+// func CallApplyPayCheque(
+// 	userAddr common.Address,
+// 	nonce *big.Int,
+// 	stAddr common.Address,
+// 	PayValue *big.Int,
+// 	sig []byte) error {
+// 	fmt.Println("HOST: ", hostops.HOST)
+func CallApplyPayCheque([]string, []int64, []byte) error {
 	cli, err := clientops.GetClient(hostops.HOST)
 	if err != nil {
 		fmt.Println("failed to dial geth", err)
@@ -33,35 +34,41 @@ func CallApplyPayCheque(
 	}
 	defer cli.Close()
 
-	// operator's sk
-	hexSk := "cb61e1519b560d994e4361b34c181656d916beb68513cff06c37eb7d258bf93d"
-	auth, err := clientops.MakeAuth(hexSk, nil, nil, big.NewInt(1000), 3000000)
-	if err != nil {
-		return err
-	}
+	/*
+		[]string:
+		Cheque - string operator_address = 1;
+		Cheque - string from = 2;
+		Cheque - string to =3;
+		Cheque - string token_address = 4;
+		PayCheque - string cash_address = 3;
 
-	// ====== read cashAddr from db
-	// create/open db
-	db, err := leveldb.OpenFile("./data.db", nil)
-	if err != nil {
-		log.Fatal("opfen db error")
-	}
-	//
-	byteCashAddr, errGet := db.Get([]byte("cashAddr"), nil)
-	if errGet != nil {
-		print.Println100ms("db get data error")
-	}
-	//
-	fmt.Printf("-> cash contract address: %s\n", string(byteCashAddr))
-	db.Close()
+		[]int64:
+		Cheque - int64 value = 5;
+		Cheque - int64 node_nonce = 6;
+		PayCheque - int64 pay_value = 6;
 
-	// get contract instance from address
-	cashInstance, err := cash.NewCash(common.HexToAddress(string(byteCashAddr)), cli)
+		[]byte:
+		PayCheque - bytes cheque_sig = 2; //运营商对cheque的签名
+	*/
 
-	if err != nil {
-		fmt.Println("NewCash err: ", err)
-		return err
-	}
+	/*
+		// byte to string
+		strOpSK := hex.EncodeToString(global.OperatorSK)
+		auth, err := clientops.MakeAuth(strOpSK, nil, nil, big.NewInt(1000), 3000000)
+		if err != nil {
+			return err
+		}
+
+		// TODO:get cash address from params
+
+		// get contract instance from address
+		cashInstance, err := cash.NewCash(common.HexToAddress(string(byteCashAddr)), cli)
+
+		if err != nil {
+			fmt.Println("NewCash err: ", err)
+			return err
+		}
+	*/
 
 	// fmt.Println("NewCash success: ", cashInstance)
 	// fmt.Println("=== in callcash.go")
@@ -72,16 +79,18 @@ func CallApplyPayCheque(
 	// fmt.Println("PayValue:", PayValue)
 	// fmt.Printf("sig:\n0x%x\n", sig)
 
-	// call send trasaction to contract
-	_, err = cashInstance.ApplyCheque(auth, userAddr, nonce, stAddr, PayValue, sig)
-	if err != nil {
-		fmt.Println("tx failed :", err)
-		return err
-	}
+	/*
+		// call send trasaction to contract
 
-	fmt.Println("-> Now mine a block to complete tx.")
+			_, err = cashInstance.ApplyCheque(auth, userAddr, nonce, stAddr, PayValue, sig)
+			if err != nil {
+				fmt.Println("tx failed :", err)
+				return err
+			}
 
-	return err
+			fmt.Println("-> Now mine a block to complete tx.")
+	*/
+	return nil
 }
 
 // CallDeploy - deploy cash contract

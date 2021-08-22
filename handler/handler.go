@@ -23,7 +23,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// Cmd1Handler - command 1 handler, run on user, receive Cheque from operator
+// Cmd1Handler - command 1 handler, run on operator, send Cheque to user
 func BuyCheckHandler(s network.Stream) error {
 
 	print.Println100ms("--> Construct and send Cheque...")
@@ -88,7 +88,8 @@ func BuyCheckHandler(s network.Stream) error {
 	print.Printf100ms("Cheque send, hash: %x\n", hash)
 
 	// sign Cheque by operator
-	var opSkByte = []byte("cb61e1519b560d994e4361b34c181656d916beb68513cff06c37eb7d258bf93d")
+	var opSkByte = global.OperatorSK
+
 	sigByte, err := sigapi.Sign(hash, opSkByte)
 	if err != nil {
 		log.Fatal("sign error:", err)

@@ -1,8 +1,10 @@
 package utils
 
 import (
+	"context"
 	"encoding/binary"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log"
 	"math/big"
@@ -16,7 +18,10 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/rockiecn/p2pdemo/global"
+	"github.com/rockiecn/p2pdemo/hostops"
 	"github.com/rockiecn/p2pdemo/pb"
+	"github.com/rockiecn/p2pdemo/print"
+	"github.com/rockiecn/p2pdemo/sigapi"
 )
 
 /*
@@ -205,4 +210,150 @@ func ListPayCheque() {
 	//fmt.Println(r)
 	//table.CloseBorder()
 	table.PrintTable()
+}
+
+// send a paycheque to remote peer
+func SendChequeByKey(key []byte) error {
+	// create/open db
+	db, err := leveldb.OpenFile("./paycheque.db", nil)
+	if err != nil {
+		log.Println("opfen db error")
+		return err
+	}
+	defer db.Close()
+
+	print.Printf100ms("Opening stream to peerID: %v\n", global.Peerid)
+	s, err := hostops.HostInfo.NewStream(context.Background(), global.Peerid, "/2")
+	if err != nil {
+		log.Println("open stream error: ", err)
+		return err
+	}
+
+	var PayChequeMarshaled []byte
+	PayChequeMarshaled, err = db.Get(key, nil)
+	if err != nil {
+		log.Println("db.Get error:", err)
+		return err
+	}
+
+	// unmarshal it to get Cheque itself
+	PayCheque := &pb.PayCheque{}
+	if err := proto.Unmarshal(PayChequeMarshaled, PayCheque); err != nil {
+		log.Fatalln("Failed to parse pay check:", err)
+		return err
+	}
+
+	if global.DEBUG {
+		print.Println100ms("-> Pay cheque info:")
+		print.PrintPayCheque(PayCheque)
+	}
+
+	// PayCheque should be created, signed and sent by user
+
+	// calc hash from PayCheque
+	hash := CalcHash(PayCheque.Cheque.From, PayCheque.Cheque.NodeNonce, PayCheque.To, PayCheque.PayValue)
+	if global.DEBUG {
+		print.Printf100ms("DEBUG> hash: %x\n", hash)
+	}
+	// sign PayCheque by user' sk
+	// user address: 1ab6a9f2b90004c1269563b5da391250ede3c114
+	//var userSkByte = []byte("b91c265cabae210642d66f9d59137eac2fab2674f4c1c88df3b8e9e6c1f74f9f")
+	var userSkByte = global.UserSK
+	PayChequeSig, err := sigapi.Sign(hash, userSkByte)
+	if err != nil {
+		log.Print("sign error")
+		return err
+	}
+
+	if global.DEBUG {
+		// for debug
+		print.Printf100ms("DEBUG> From: %s\n", PayCheque.Cheque.From)
+		print.Printf100ms("DEBUG> NodeNonce: %d\n", PayCheque.Cheque.NodeNonce)
+		print.Printf100ms("DEBUG> To: %s\n", PayCheque.To)
+		print.Printf100ms("DEBUG> PayValue: %d\n", PayCheque.PayValue)
+		print.Printf100ms("DEBUG> signature: %x\n", PayChequeSig)
+	}
+
+	// send PayCheque msg to storage
+	print.Println100ms("--> Sending PayCheque to storage")
+	_, err = s.Write(PayChequeMarshaled)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	// close stream
+	s.Close()
+
+	return nil
+}
+
+// increase the pay value of paycheque in db by 'global.Increase'
+func IncPayValueByKey(key []byte) error {
+	// create/open db
+	db, err := leveldb.OpenFile("./paycheque.db", nil)
+	if err != nil {
+		log.Println("opfen db error")
+		return err
+	}
+	defer db.Close()
+
+	var PayChequeMarshaled []byte
+	PayChequeMarshaled, err = db.Get(key, nil)
+	if err != nil {
+		log.Println("db.Get error:", err)
+		return err
+	}
+
+	// unmarshal it to get Cheque itself
+	PayCheque := &pb.PayCheque{}
+	if err := proto.Unmarshal(PayChequeMarshaled, PayCheque); err != nil {
+		log.Println("Failed to parse pay check:", err)
+		return err
+	}
+
+	if global.DEBUG {
+		print.Printf100ms("-> Pay cheque before increased:%d\n", PayCheque.PayValue)
+	}
+
+	// not enough cash
+	if PayCheque.Cheque.Value < PayCheque.PayValue+global.Increase {
+		fmt.Println("Cheque not enough cash.")
+		return errors.New("cheque not enough cash")
+	}
+
+	// increase pay value
+	PayCheque.PayValue = PayCheque.PayValue + global.Increase
+	if global.DEBUG {
+		print.Printf100ms("-> Pay cheque after increased:%d\n", PayCheque.PayValue)
+	}
+
+	// serialize
+	PayChequeMarshaled, err = proto.Marshal(PayCheque)
+	if err != nil {
+		fmt.Println("marshal paycheque error:", err)
+		return err
+	}
+
+	// put into db
+	err = db.Put(key, PayChequeMarshaled, nil)
+	if err != nil {
+		fmt.Println("put paycheque error:", err)
+		return err
+	}
+
+	return nil
+}
+
+// transmit ID of a pay cheque to key, use Index[]
+func IDtoKey(uID uint) ([]byte, error) {
+
+	keyByte, err := hex.DecodeString(global.Index[uID])
+	if err != nil {
+		fmt.Println("decode string error: ", err)
+		return nil, err
+	}
+
+	return keyByte, nil
+
 }
