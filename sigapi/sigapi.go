@@ -39,6 +39,8 @@ func Sign(hash []byte, skByte []byte) (sigRet []byte, err error) {
 // Verify signature
 func Verify(hash []byte, sigByte []byte, fromAddress common.Address) (ok bool, err error) {
 
+	fmt.Println("-> in verify")
+
 	// compute digest
 	//digest := crypto.Keccak256Hash(msg)
 

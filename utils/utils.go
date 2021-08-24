@@ -125,12 +125,22 @@ func GenChequeKey(addr string, nonce *big.Int) ([]byte, error) {
 }
 
 // Update Index
-func UpdatePayChequeIndex() {
+func UpdatePayChequeIndex(user bool) {
+	var dbfile string
+	var Index *[]string
+	if user {
+		dbfile = "./paycheque.db"
+		// if want destination slice to change the source slice, address of source slice needed.
+		Index = &global.UserIndex
+	} else {
+		dbfile = "./storage_paycheque.db"
+		Index = &global.StorageIndex
+	}
 	// clear index
-	global.Index = global.Index[0:0]
+	*Index = (*Index)[0:0]
 
 	// create/open db
-	db, err := leveldb.OpenFile("./paycheque.db", nil)
+	db, err := leveldb.OpenFile(dbfile, nil)
 	if err != nil {
 		log.Fatal("opfen db error")
 	}
@@ -139,7 +149,9 @@ func UpdatePayChequeIndex() {
 	iter := db.NewIterator(nil, nil)
 	for iter.Next() {
 		keyByte := iter.Key()
-		global.Index = append(global.Index, hex.EncodeToString(keyByte))
+		*Index = append(*Index, hex.EncodeToString(keyByte))
+		fmt.Printf("index len: %d, cap: %d\n", len(*Index), cap(*Index))
+		fmt.Printf("index0: %s\n", (*Index)[0])
 	}
 	iter.Release()
 	err = iter.Error()
@@ -150,10 +162,23 @@ func UpdatePayChequeIndex() {
 }
 
 // user list data in pay cheque db
-func ListPayCheque() {
-	UpdatePayChequeIndex()
+func ListPayCheque(user bool) {
+
+	// update userIndex and storageIndex
+	UpdatePayChequeIndex(user)
+
+	var dbfile string
+	var Index []string
+	if user {
+		dbfile = "./paycheque.db"
+		Index = global.UserIndex
+	} else {
+		dbfile = "./storage_paycheque.db"
+		Index = global.StorageIndex
+	}
+
 	// create/open db
-	db, err := leveldb.OpenFile("./paycheque.db", nil)
+	db, err := leveldb.OpenFile(dbfile, nil)
 	if err != nil {
 		log.Fatal("opfen db error")
 	}
@@ -167,16 +192,20 @@ func ListPayCheque() {
 	}
 	// show table
 	var id int = 0
-	for id < len(global.Index) {
+	for id < len(Index) {
 
 		// get data
 		var PayChequeMarshaled []byte
-		keyByte, err := hex.DecodeString(global.Index[id])
+		keyByte, err := hex.DecodeString(Index[id])
 		if err != nil {
 			fmt.Println("decodeString error:", err.Error())
 			return
 		}
-		PayChequeMarshaled, _ = db.Get(keyByte, nil)
+		PayChequeMarshaled, err = db.Get(keyByte, nil)
+		if err != nil {
+			fmt.Println("db get error: ", err)
+			return
+		}
 		// unmarshal it to get Cheque itself
 		PayCheque := &pb.PayCheque{}
 		if err := proto.Unmarshal(PayChequeMarshaled, PayCheque); err != nil {
@@ -274,9 +303,11 @@ func SendChequeByKey(key []byte) error {
 		print.Printf100ms("DEBUG> signature: %x\n", PayChequeSig)
 	}
 
+	msg := MergeSlice(PayChequeSig, PayChequeMarshaled)
+
 	// send PayCheque msg to storage
-	print.Println100ms("--> Sending PayCheque to storage")
-	_, err = s.Write(PayChequeMarshaled)
+	print.Println100ms("--> Sending PayCheque and sig to storage")
+	_, err = s.Write(msg)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -346,9 +377,17 @@ func IncPayValueByKey(key []byte) error {
 }
 
 // transmit ID of a pay cheque to key, use Index[]
-func IDtoKey(uID uint) ([]byte, error) {
+// user: true for user, false for storage
+func IDtoKey(uID uint, user bool) ([]byte, error) {
 
-	keyByte, err := hex.DecodeString(global.Index[uID])
+	var Index []string
+	if user {
+		Index = global.UserIndex
+	} else {
+		Index = global.StorageIndex
+	}
+
+	keyByte, err := hex.DecodeString(Index[uID])
 	if err != nil {
 		fmt.Println("decode string error: ", err)
 		return nil, err

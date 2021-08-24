@@ -35,8 +35,8 @@ func BuyCheckHandler(s network.Stream) error {
 
 	Cheque.OperatorAddress = "9e0153496067c20943724b79515472195a7aedaa" // operator
 	Cheque.From = "1ab6a9f2b90004c1269563b5da391250ede3c114"            // user
-	Cheque.To = "0xb213d01542d129806d664248a380db8b12059061"            // storage
-	Cheque.TokenAddress = "tokenaddress"
+	Cheque.To = "b213d01542d129806d664248a380db8b12059061"              // storage
+	Cheque.TokenAddress = "testtesttesttesttesttesttesttesttesttest"
 
 	// create/open db
 	db, err := leveldb.OpenFile("./operator_data.db", nil)
@@ -47,7 +47,7 @@ func BuyCheckHandler(s network.Stream) error {
 
 	var newNonce int64 = 0
 	// storage -> nonce
-	ret, err := db.Get([]byte(Cheque.To), nil)
+	nonce, err := db.Get([]byte(Cheque.To), nil)
 	if err != nil {
 		if err.Error() == "leveldb: not found" { // no nonce at all
 			db.Put([]byte(Cheque.To), utils.Int64ToBytes(1), nil)
@@ -55,20 +55,21 @@ func BuyCheckHandler(s network.Stream) error {
 			fmt.Println("operator db get nonce error: ", err)
 			return err
 		}
-	} else { // increase nonce by 1
-		// byte to string
-		oldNonce := utils.BytesToInt64(ret)
-		fmt.Println("oldNonce: ", oldNonce)
-		newNonce = oldNonce + 1
-		// put new nonce into db
-		byteN := utils.Int64ToBytes(newNonce)
-		fmt.Println("newNonce: ", newNonce)
-		fmt.Printf("byteN: %v\n", byteN)
-		err = db.Put([]byte(Cheque.To), byteN, nil)
-		if err != nil {
-			fmt.Println("operator db put nonce error")
-			return err
-		}
+	}
+
+	// increase nonce by 1
+	// byte to string
+	oldNonce := utils.BytesToInt64(nonce)
+	fmt.Println("oldNonce: ", oldNonce)
+	newNonce = oldNonce + 1
+	// put new nonce into db
+	byteN := utils.Int64ToBytes(newNonce)
+	fmt.Println("newNonce: ", newNonce)
+	fmt.Printf("byteN: %v\n", byteN)
+	err = db.Put([]byte(Cheque.To), byteN, nil)
+	if err != nil {
+		fmt.Println("operator db put nonce error")
+		return err
 	}
 
 	//
@@ -102,7 +103,7 @@ func BuyCheckHandler(s network.Stream) error {
 
 	if global.DEBUG {
 		print.Printf100ms("sigByte:%x\n", sigByte)
-		print.Printf100ms("cashAddr:%x\n", cashAddrByte)
+		print.Printf100ms("cashAddr:%s\n", cashAddrByte)
 		print.Printf100ms("ChequeMarshaled:%x\n", ChequeMarshaled)
 	}
 
@@ -123,7 +124,7 @@ func BuyCheckHandler(s network.Stream) error {
 	return err
 }
 
-// Cmd2Handler - command 2 handler, run on storage, receive PayCheque from user
+// Cmd2Handler - command 2 handler, run on storage, receive PayCheque from user and record to db
 func SendCheckHandler(s network.Stream) error {
 
 	/*
@@ -150,15 +151,15 @@ func SendCheckHandler(s network.Stream) error {
 	*/
 	// Read data method 3
 	// Caution: Need writer to close stream first.
-	PayChequeMarshaled, err := ioutil.ReadAll(s)
+	in, err := ioutil.ReadAll(s)
 	if err != nil {
 		log.Fatalln("Error reading :", err)
 		return err
 	}
 
-	// // parse data
-	// var sigByte = in[:65]
-	// var PayChequeMarshaled = in[65:]
+	// parse data
+	var sigByte = in[:65]
+	var PayChequeMarshaled = in[65:]
 
 	// unmarshal data
 	PayCheque := &pb.PayCheque{}
@@ -180,10 +181,13 @@ func SendCheckHandler(s network.Stream) error {
 	// []byte to common.Address
 	From := common.BytesToAddress(fromAddrByte)
 
-	// get sig from pay cheque
-	sigByte := PayCheque.ChequeSig
 	// calc hash from PayCheque
 	hash := utils.CalcHash(PayCheque.Cheque.From, PayCheque.Cheque.NodeNonce, PayCheque.To, PayCheque.PayValue)
+
+	if global.DEBUG {
+		fmt.Printf("hash: %x\n", hash)
+		fmt.Printf("sigByte: %x\n", sigByte)
+	}
 
 	// verify PayCheque signature: []byte []byte common.Address
 	ok, verErr := sigapi.Verify(hash, sigByte, From)
@@ -194,42 +198,41 @@ func SendCheckHandler(s network.Stream) error {
 
 	if !ok {
 		print.Println100ms("<signature of PayCheque verify failed>")
-	} else {
-		print.Println100ms("<signature of PayCheque verify success>")
-
-		// wirte PayCheque into db
-		// create/open db
-		db, err := leveldb.OpenFile("./storage_paycheque.db", nil)
-		if err != nil {
-			log.Fatal("opfen db error")
-		}
-
-		// gen Cheque key: To + nonce
-		bigNonce := big.NewInt(PayCheque.Cheque.NodeNonce)
-		var ChequeKey []byte
-		ChequeKey, err = utils.GenChequeKey(PayCheque.Cheque.To, bigNonce)
-		if err != nil {
-			log.Fatal("GenChequeKey error:", err)
-		}
-
-		if global.DEBUG {
-			fmt.Println("in Cmd2Handler.")
-			fmt.Printf("ChequeKey: %x\n", ChequeKey)
-		}
-
-		// use PayChequeKey as PayCheque id to store PayChequeMarshaled.
-		//PayChequeMarshWithSig := utils.MergeSlice(sigByte, PayChequeMarshaled)
-		err = db.Put(ChequeKey, PayChequeMarshaled, nil)
-		if err != nil {
-			print.Println100ms("db put data error")
-			return err
-		}
-
-		db.Close()
-
 	}
 
-	utils.ListPayCheque()
+	print.Println100ms("<signature of PayCheque verify success>")
+
+	// wirte PayCheque into db
+	// create/open db
+	db, err := leveldb.OpenFile("./storage_paycheque.db", nil)
+	if err != nil {
+		log.Fatal("opfen db error")
+	}
+
+	// gen Cheque key: To + nonce
+	bigNonce := big.NewInt(PayCheque.Cheque.NodeNonce)
+	var ChequeKey []byte
+	ChequeKey, err = utils.GenChequeKey(PayCheque.Cheque.To, bigNonce)
+	if err != nil {
+		log.Fatal("GenChequeKey error:", err)
+	}
+
+	if global.DEBUG {
+		fmt.Println("in Cmd2Handler.")
+		fmt.Printf("ChequeKey: %x\n", ChequeKey)
+	}
+
+	// use PayChequeKey as PayCheque id to store PayChequeMarshaled.
+	//PayChequeMarshWithSig := utils.MergeSlice(sigByte, PayChequeMarshaled)
+	err = db.Put(ChequeKey, PayChequeMarshaled, nil)
+	if err != nil {
+		print.Println100ms("db put data error")
+		return err
+	}
+
+	db.Close()
+
+	utils.ListPayCheque(false)
 
 	print.PrintMenu()
 	print.Println100ms("\n> Intput target address and cmd: ")

@@ -70,37 +70,49 @@ func main() {
 		fmt.Scanf("%s", &strCmd)
 		if strCmd == "" {
 			print.Printf100ms("invalid input.\n")
-			return
+			continue
 		}
 
 		// execute command with cmd id
 		//exeCommand(Ctx, hostops.HostInfo, strTarget, strCmd)
 		switch strCmd {
-		case "0":
+		// recoredRemote
+		case "r":
 			recoredRemote()
-		case "1":
-			// operator send purchase to user
+		// DeployCash
+		case "d":
 			execmd.DeployCash()
-		case "2":
-			// user send cheque to storage
+		// user get cheque from operator
+		case "g":
 			execmd.GetCheque()
-		case "3":
-			// test
+		// Send One PayCheque to storage
+		case "s":
 			execmd.SendOnePayChequeByID()
-		case "4":
-			// deploy cash
-			execmd.ListPayChequeDB()
-		case "5":
-			// call cash contract
-			execmd.DeleteChequeByID()
-		case "6":
+		// list user's cheque db
+		case "lu":
+			execmd.ListDB(true)
+		// delete a cheque of user
+		case "du":
+			execmd.DeleteChequeByID(true)
+		// Inc And Send a Cheque to storage
+		case "is":
 			execmd.IncAndSendCheque()
-		case "7":
-			// list user_db
-			execmd.CallCash()
-		case "8":
-			// delete user db
+		// list storage's cheque db
+		case "ls":
+			execmd.ListDB(false)
+		// delete a cheque of storage
+		case "ds":
+			execmd.DeleteChequeByID(false)
+		// call cash
+		case "cc":
+			execmd.StorageCallCash()
+		// TestCall
+		case "t":
 			execmd.TestCall()
+		case "cu":
+			execmd.ClearDB(true)
+		case "cs":
+			execmd.ClearDB(false)
 		}
 	}
 }
