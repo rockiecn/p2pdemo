@@ -3,6 +3,7 @@ package callcash
 import (
 	"context"
 	"crypto/ecdsa"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"math/big"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/rockiecn/p2pdemo/cash"
 	"github.com/rockiecn/p2pdemo/clientops"
+	"github.com/rockiecn/p2pdemo/global"
 	"github.com/rockiecn/p2pdemo/hostops"
 )
 
@@ -25,7 +27,7 @@ import (
 // 	PayValue *big.Int,
 // 	sig []byte) error {
 // 	fmt.Println("HOST: ", hostops.HOST)
-func CallApplyPayCheque([]string, []int64, []byte) error {
+func CallApplyPayCheque(paycheque cash.PayCheque) error {
 	cli, err := clientops.GetClient(hostops.HOST)
 	if err != nil {
 		fmt.Println("failed to dial geth", err)
@@ -62,7 +64,6 @@ func CallApplyPayCheque([]string, []int64, []byte) error {
 
 		// get contract instance from address
 		cashInstance, err := cash.NewCash(common.HexToAddress(string(byteCashAddr)), cli)
-
 		if err != nil {
 			fmt.Println("NewCash err: ", err)
 			return err
@@ -89,6 +90,29 @@ func CallApplyPayCheque([]string, []int64, []byte) error {
 
 			fmt.Println("-> Now mine a block to complete tx.")
 	*/
+
+	// byte to string
+	strStorageSK := hex.EncodeToString([]byte(global.StrStorageSK))
+	auth, err := clientops.MakeAuth(strStorageSK, nil, nil, big.NewInt(1000), 3000000)
+	if err != nil {
+		return err
+	}
+
+	// get contract instance from address
+	cashInstance, err := cash.NewCash(common.HexToAddress(paycheque.CashAddr), cli)
+	if err != nil {
+		fmt.Println("NewCash err: ", err)
+		return err
+	}
+
+	_, err = cashInstance.ApplyCheque(auth, paycheque)
+	if err != nil {
+		fmt.Println("tx failed :", err)
+		return err
+	}
+
+	fmt.Println("-> Now mine a block to complete tx.")
+
 	return nil
 }
 

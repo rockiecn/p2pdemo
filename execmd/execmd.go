@@ -15,6 +15,7 @@ import (
 
 	"github.com/rockiecn/interact/callstorage"
 	"github.com/rockiecn/p2pdemo/callcash"
+	"github.com/rockiecn/p2pdemo/cash"
 	"github.com/rockiecn/p2pdemo/global"
 	"github.com/rockiecn/p2pdemo/hostops"
 	"github.com/rockiecn/p2pdemo/pb"
@@ -403,8 +404,19 @@ func StorageCallCash() {
 
 	fmt.Printf("%x\n", bytesParam)
 
+	var paychequeContract cash.PayCheque
+	paychequeContract.Cheque.OpAddr = PayCheque.Cheque.OperatorAddress
+	paychequeContract.Cheque.FromAddr = PayCheque.Cheque.From
+	paychequeContract.Cheque.ToAddr = PayCheque.Cheque.To
+	paychequeContract.Cheque.TokenAddr = PayCheque.Cheque.TokenAddress
+
+	bigValue := big.NewInt(PayCheque.Cheque.Value)
+	paychequeContract.Cheque.Value = bigValue
+	bigNonce := big.NewInt(PayCheque.Cheque.NodeNonce)
+	paychequeContract.Cheque.NodeNonce = bigNonce
+
 	//errCallApply := callcash.CallApplyPayCheque(From, bigNonce, To, bigPay, PayChequeSig)
-	errCallApply := callcash.CallApplyPayCheque(stringParams, intParams, bytesParam)
+	errCallApply := callcash.CallApplyPayCheque(paychequeContract)
 	if errCallApply != nil {
 		fmt.Println("callApplyPayCheque error:", errCallApply)
 		fmt.Println("storage address:", PayCheque.Cheque.To)
