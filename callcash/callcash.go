@@ -15,7 +15,6 @@ import (
 	"github.com/rockiecn/p2pdemo/cash"
 	"github.com/rockiecn/p2pdemo/clientops"
 	"github.com/rockiecn/p2pdemo/hostops"
-	"github.com/rockiecn/p2pdemo/print"
 )
 
 // CallApplyCheque - send tx to contract to call apply cheque method.
@@ -110,36 +109,41 @@ func CallDeploy() (common.Address, error) {
 	sk, err := crypto.HexToECDSA("cb61e1519b560d994e4361b34c181656d916beb68513cff06c37eb7d258bf93d")
 	if err != nil {
 		fmt.Println("HexToECDSA err: ", err)
-	} else {
-		fmt.Println("get sk: ", sk)
+		return cashAddr, err
 	}
+	fmt.Println("get sk: ", sk)
 
-	//
+	// get pubkey
 	publicKey := sk.Public()
 	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
 	if !ok {
-		log.Fatal("error casting public key to ECDSA")
+		log.Println("error casting public key to ECDSA")
+		return cashAddr, err
 	}
 
-	//
+	// pubkey to address
 	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
 	nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return cashAddr, err
 	}
 
-	//
+	// get gas price
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return cashAddr, err
 	}
 
 	//tx := types.NewTransaction(nonce, toAddress, value, gasLimit, gasPrice, nil)
 	auth, err := bind.NewKeyedTransactorWithChainID(sk, big.NewInt(1337))
 	if err != nil {
-		log.Panic("NewKeyedTransactorWithChainID err:", err)
+		log.Println("NewKeyedTransactorWithChainID err:", err)
+		return cashAddr, err
 	}
 
+	// set nonce
 	auth.Nonce = big.NewInt(int64(nonce))
 	// string to bigint
 	bn := new(big.Int)
@@ -148,7 +152,8 @@ func CallDeploy() (common.Address, error) {
 	//bn, ok1 := bn.SetString("1000", 10) // deploy 100 eth
 	if !ok1 {
 		fmt.Println("SetString: error")
-		panic("SetString error")
+		fmt.Println("big number SetString error")
+		return cashAddr, err
 	}
 	auth.Value = bn                 // deploy 100 eth
 	auth.GasLimit = uint64(7000000) // in units
@@ -168,12 +173,14 @@ func CallDeploy() (common.Address, error) {
 	// create/open db
 	db, err := leveldb.OpenFile("./operator_data.db", nil)
 	if err != nil {
-		log.Fatal("opfen db error")
+		log.Print("opfen db error:", err)
+		return cashAddr, err
 	}
-	// store have_purchased
+	// store cash address
 	err = db.Put([]byte("cashAddr"), []byte(cashAddr.String()), nil)
 	if err != nil {
-		print.Println100ms("db put data error")
+		log.Println("db put data error:", err)
+		return cashAddr, err
 	}
 	db.Close()
 

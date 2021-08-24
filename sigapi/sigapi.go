@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/rockiecn/p2pdemo/global"
 )
 
 // Sign msg with privateKey
@@ -15,7 +16,7 @@ func Sign(hash []byte, skByte []byte) (sigRet []byte, err error) {
 	//privateKeyECDSA, err := crypto.HexToECDSA(utils.Byte2Str(skByte))
 	privateKeyECDSA, err := crypto.HexToECDSA(string(skByte))
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
 		return nil, err
 	}
 
@@ -25,7 +26,7 @@ func Sign(hash []byte, skByte []byte) (sigRet []byte, err error) {
 	// sign to bytes
 	sigByte, err := crypto.Sign(hash, privateKeyECDSA)
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
 		return nil, err
 	}
 
@@ -39,7 +40,9 @@ func Sign(hash []byte, skByte []byte) (sigRet []byte, err error) {
 // Verify signature
 func Verify(hash []byte, sigByte []byte, fromAddress common.Address) (ok bool, err error) {
 
-	fmt.Println("-> in verify")
+	if global.DEBUG {
+		fmt.Println("-> in verify")
+	}
 
 	// compute digest
 	//digest := crypto.Keccak256Hash(msg)
@@ -56,8 +59,11 @@ func Verify(hash []byte, sigByte []byte, fromAddress common.Address) (ok bool, e
 	// pub key to address
 	recoveredAddr := crypto.PubkeyToAddress(*pubKeyECDSA)
 
-	fmt.Println("fromAddress", fromAddress)
-	fmt.Println("recoveredAddr", recoveredAddr)
+	if global.DEBUG {
+		fmt.Println("fromAddress", fromAddress)
+		fmt.Println("recoveredAddr", recoveredAddr)
+	}
+
 	matches := (fromAddress == recoveredAddr)
 
 	//fmt.Println("matches:", matches)

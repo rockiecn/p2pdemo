@@ -241,7 +241,7 @@ func ListPayCheque(user bool) {
 	table.PrintTable()
 }
 
-// send a paycheque to remote peer
+// user send a paycheque to remote peer
 func SendChequeByKey(key []byte) error {
 	// create/open db
 	db, err := leveldb.OpenFile("./paycheque.db", nil)
@@ -319,7 +319,7 @@ func SendChequeByKey(key []byte) error {
 	return nil
 }
 
-// increase the pay value of paycheque in db by 'global.Increase'
+// user increase the pay value of paycheque in db by 'global.Increase'
 func IncPayValueByKey(key []byte) error {
 	// create/open db
 	db, err := leveldb.OpenFile("./paycheque.db", nil)
