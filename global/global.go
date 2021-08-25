@@ -19,4 +19,4 @@ var OperatorSK = []byte("cb61e1519b560d994e4361b34c181656d916beb68513cff06c37eb7
 var StrStorageSK = "aa03c94703e40a3f9e694a002dcb250182970917a7cd2346f2dfd337ada154f5"
 
 //var strOperatorSk string = string("cb61e1519b560d994e4361b34c181656d916beb68513cff06c37eb7d258bf93d")
-var Increase int64 = 10
+var Increase int64 = 1

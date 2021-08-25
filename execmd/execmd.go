@@ -54,8 +54,8 @@ func GetCheque() {
 
 	// parse data
 	sigByte := in[:65]         //65
-	cashAddrByte := in[65:107] //42
-	ChequeMarshaled := in[107:]
+	cashAddrByte := in[65:105] //40
+	ChequeMarshaled := in[105:]
 
 	if global.DEBUG {
 		print.Printf100ms("sigByte:%x\n", sigByte)
@@ -404,16 +404,23 @@ func StorageCallCash() {
 
 	fmt.Printf("%x\n", bytesParam)
 
+	// cheque
 	var paychequeContract cash.PayCheque
 	paychequeContract.Cheque.OpAddr = PayCheque.Cheque.OperatorAddress
 	paychequeContract.Cheque.FromAddr = PayCheque.Cheque.From
 	paychequeContract.Cheque.ToAddr = PayCheque.Cheque.To
 	paychequeContract.Cheque.TokenAddr = PayCheque.Cheque.TokenAddress
-
 	bigValue := big.NewInt(PayCheque.Cheque.Value)
 	paychequeContract.Cheque.Value = bigValue
 	bigNonce := big.NewInt(PayCheque.Cheque.NodeNonce)
 	paychequeContract.Cheque.NodeNonce = bigNonce
+	// paycheque
+	paychequeContract.ChequeSig = PayCheque.ChequeSig
+	paychequeContract.CashAddr = PayCheque.CashAddress
+	paychequeContract.FromAddr = PayCheque.From
+	paychequeContract.ToAddr = PayCheque.To
+	bigPayValue := big.NewInt(PayCheque.PayValue)
+	paychequeContract.PayValue = bigPayValue
 
 	//errCallApply := callcash.CallApplyPayCheque(From, bigNonce, To, bigPay, PayChequeSig)
 	errCallApply := callcash.CallApplyPayCheque(paychequeContract)

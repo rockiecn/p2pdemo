@@ -91,9 +91,17 @@ func CallApplyPayCheque(paycheque cash.PayCheque) error {
 			fmt.Println("-> Now mine a block to complete tx.")
 	*/
 
+	// string decode to hex
+	storageHexByte, err := hex.DecodeString(global.StrStorageSK)
+	if err != nil {
+		fmt.Println("callcash.go. decode string error", err)
+		return err
+	}
 	// byte to string
-	strStorageSK := hex.EncodeToString([]byte(global.StrStorageSK))
-	auth, err := clientops.MakeAuth(strStorageSK, nil, nil, big.NewInt(1000), 3000000)
+	storageSKHexString := hex.EncodeToString(storageHexByte)
+	fmt.Printf("hex strStorageSK x: %x\n", storageSKHexString)
+	fmt.Printf("hex strStorageSK s: %s\n", storageSKHexString)
+	auth, err := clientops.MakeAuth(storageSKHexString, nil, nil, big.NewInt(1000), 9000000)
 	if err != nil {
 		return err
 	}
@@ -104,6 +112,19 @@ func CallApplyPayCheque(paycheque cash.PayCheque) error {
 		fmt.Println("NewCash err: ", err)
 		return err
 	}
+
+	fmt.Printf("CashAddr: %s\n", paycheque.CashAddr)
+	fmt.Printf("ChequeSig: %x\n", paycheque.ChequeSig)
+	fmt.Printf("FromAddr: %s\n", paycheque.FromAddr)
+	fmt.Printf("ToAddr: %s\n", paycheque.ToAddr)
+	fmt.Printf("PayValue: %s\n", paycheque.PayValue.String())
+	fmt.Printf("Cheque.FromAddr: %s\n", paycheque.Cheque.FromAddr)
+	fmt.Printf("Cheque.OpAddr: %s\n", paycheque.Cheque.OpAddr)
+	fmt.Printf("Cheque.ToAddr: %s\n", paycheque.Cheque.ToAddr)
+	fmt.Printf("Cheque.NodeNonce: %s\n", paycheque.Cheque.NodeNonce.String())
+
+	_ = auth
+	_ = cashInstance
 
 	_, err = cashInstance.ApplyCheque(auth, paycheque)
 	if err != nil {

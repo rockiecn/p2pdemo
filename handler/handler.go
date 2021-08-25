@@ -101,13 +101,16 @@ func BuyCheckHandler(s network.Stream) error {
 		log.Fatal("get cash address error:", err)
 	}
 
+	// delete prefix '0x'
+	cashAddrByte = cashAddrByte[2:]
+
 	if global.DEBUG {
 		print.Printf100ms("sigByte:%x\n", sigByte)
 		print.Printf100ms("cashAddr:%s\n", cashAddrByte)
 		print.Printf100ms("ChequeMarshaled:%x\n", ChequeMarshaled)
 	}
 
-	// sig(65) | cash address(42) | cheque
+	// sig(65) | cash address(40) | cheque
 	var msg = []byte{}
 	msg = utils.MergeSlice(sigByte, cashAddrByte)
 	msg = utils.MergeSlice(msg, ChequeMarshaled)
