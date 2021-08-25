@@ -107,7 +107,7 @@ func CallApplyPayCheque(paycheque cash.PayCheque) error {
 	}
 
 	// get contract instance from address
-	cashInstance, err := cash.NewCash(common.HexToAddress(paycheque.CashAddr), cli)
+	cashInstance, err := cash.NewCash(paycheque.CashAddr, cli)
 	if err != nil {
 		fmt.Println("NewCash err: ", err)
 		return err

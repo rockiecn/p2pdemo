@@ -406,19 +406,20 @@ func StorageCallCash() {
 
 	// cheque
 	var paychequeContract cash.PayCheque
-	paychequeContract.Cheque.OpAddr = PayCheque.Cheque.OperatorAddress
-	paychequeContract.Cheque.FromAddr = PayCheque.Cheque.From
-	paychequeContract.Cheque.ToAddr = PayCheque.Cheque.To
-	paychequeContract.Cheque.TokenAddr = PayCheque.Cheque.TokenAddress
+	common.HexToAddress(PayCheque.Cheque.OperatorAddress)
+	paychequeContract.Cheque.OpAddr = common.HexToAddress(PayCheque.Cheque.OperatorAddress)
+	paychequeContract.Cheque.FromAddr = common.HexToAddress(PayCheque.Cheque.From)
+	paychequeContract.Cheque.ToAddr = common.HexToAddress(PayCheque.Cheque.To)
+	paychequeContract.Cheque.TokenAddr = common.HexToAddress(PayCheque.Cheque.TokenAddress)
 	bigValue := big.NewInt(PayCheque.Cheque.Value)
 	paychequeContract.Cheque.Value = bigValue
 	bigNonce := big.NewInt(PayCheque.Cheque.NodeNonce)
 	paychequeContract.Cheque.NodeNonce = bigNonce
 	// paycheque
 	paychequeContract.ChequeSig = PayCheque.ChequeSig
-	paychequeContract.CashAddr = PayCheque.CashAddress
-	paychequeContract.FromAddr = PayCheque.From
-	paychequeContract.ToAddr = PayCheque.To
+	paychequeContract.CashAddr = common.HexToAddress(PayCheque.CashAddress)
+	paychequeContract.FromAddr = common.HexToAddress(PayCheque.From)
+	paychequeContract.ToAddr = common.HexToAddress(PayCheque.To)
 	bigPayValue := big.NewInt(PayCheque.PayValue)
 	paychequeContract.PayValue = bigPayValue
 
