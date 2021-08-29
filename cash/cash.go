@@ -30,28 +30,26 @@ var (
 
 // Cheque is an auto generated low-level Go binding around an user-defined struct.
 type Cheque struct {
-	OpAddr    common.Address
-	FromAddr  common.Address
-	ToAddr    common.Address
-	TokenAddr common.Address
-	Value     *big.Int
-	NodeNonce *big.Int
+	Value        *big.Int
+	TokenAddr    common.Address
+	Nonce        *big.Int
+	FromAddr     common.Address
+	ToAddr       common.Address
+	OpAddr       common.Address
+	ContractAddr common.Address
 }
 
 // PayCheque is an auto generated low-level Go binding around an user-defined struct.
 type PayCheque struct {
 	Cheque    Cheque
 	ChequeSig []byte
-	CashAddr  common.Address
-	FromAddr  common.Address
-	ToAddr    common.Address
 	PayValue  *big.Int
 }
 
 // CashMetaData contains all meta data concerning the Cash contract.
 var CashMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[],\"stateMutability\":\"payable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"ShowFrom\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"name\":\"ShowHash\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"ShowNonce\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"name\":\"ShowPack\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"name\":\"ShowSig\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"ShowSigner\",\"type\":\"event\"},{\"inputs\":[{\"components\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"opAddr\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"fromAddr\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"toAddr\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"tokenAddr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"nodeNonce\",\"type\":\"uint256\"}],\"internalType\":\"structCheque\",\"name\":\"cheque\",\"type\":\"tuple\"},{\"internalType\":\"bytes\",\"name\":\"chequeSig\",\"type\":\"bytes\"},{\"internalType\":\"address\",\"name\":\"cashAddr\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"fromAddr\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"toAddr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"payValue\",\"type\":\"uint256\"}],\"internalType\":\"structPayCheque\",\"name\":\"paycheque\",\"type\":\"tuple\"}],\"name\":\"apply_cheque\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"payable\",\"type\":\"function\"}]",
-	Bin: "0x6080604052610b0b806100136000396000f3fe60806040526004361061001e5760003560e01c8063babf801114610023575b600080fd5b61003d600480360381019061003891906105e9565b610053565b60405161004a9190610762565b60405180910390f35b60007fe7d038274dbda90ba9b4a73bcf23a30cabd0a1567a2b29d19d2accf5399f030982600001516020015160405161008c9190610747565b60405180910390a17faf3a06b91ffcbd286a1f609888182ab42c9bb71d1f95491bfe3bc6d300a48184826000015160a001516040516100cb91906107ff565b60405180910390a17f769b78495bdc939f1cebbfbadf4ebc075e9f897031a598312365555d70019ff2826020015160405161010691906107dd565b60405180910390a16000826000015160200151836000015160a001516000604051602001610136939291906106ff565b60405160208183030381529060405290507fa715a6946641bea3f72cecb3acc530b4c2bae0a20e41cb7b0022ef8f8750ece38160405161017691906107dd565b60405180910390a16000836000015160200151846000015160a0015160006040516020016101a6939291906106ff565b6040516020818303038152906040528051906020012090507f745731c823271a437c86a7af6d16856092b7dcf98734a5b50c09c64562e5692f816040516101ed919061077d565b60405180910390a160006102058286602001516102fb565b90507f19e241431b2317b16d0f71f8af360a0eb20fbdbfdb535358dc6136c9f1b5cada816040516102369190610747565b60405180910390a18073ffffffffffffffffffffffffffffffffffffffff1685600001516000015173ffffffffffffffffffffffffffffffffffffffff1614156102ee576000670de0b6b3a76400008660a0015161029491906108ce565b9050856080015173ffffffffffffffffffffffffffffffffffffffff166108fc829081150290604051600060405180830381858888f193505050501580156102e0573d6000803e3d6000fd5b5060019450505050506102f6565b600093505050505b919050565b6000604182511461030f57600090506103fd565b60008060006020850151925060408501519150606085015160001a90507f7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a08260001c111561036357600093505050506103fd565b601b8160ff16101561037f57601b8161037c9190610897565b90505b601b8160ff16141580156103975750601c8160ff1614155b156103a857600093505050506103fd565b600186828585604051600081526020016040526040516103cb9493929190610798565b6020604051602081039080840390855afa1580156103ed573d6000803e3d6000fd5b5050506020604051035193505050505b92915050565b60006104166104118461083f565b61081a565b90508281526020810184848401111561042e57600080fd5b610439848285610987565b509392505050565b60008135905061045081610aa7565b92915050565b600082601f83011261046757600080fd5b8135610477848260208601610403565b91505092915050565b600060c0828403121561049257600080fd5b61049c60c061081a565b905060006104ac84828501610441565b60008301525060206104c084828501610441565b60208301525060406104d484828501610441565b60408301525060606104e884828501610441565b60608301525060806104fc848285016105d4565b60808301525060a0610510848285016105d4565b60a08301525092915050565b6000610160828403121561052f57600080fd5b61053960c061081a565b9050600061054984828501610480565b60008301525060c082013567ffffffffffffffff81111561056957600080fd5b61057584828501610456565b60208301525060e061058984828501610441565b60408301525061010061059e84828501610441565b6060830152506101206105b384828501610441565b6080830152506101406105c8848285016105d4565b60a08301525092915050565b6000813590506105e381610abe565b92915050565b6000602082840312156105fb57600080fd5b600082013567ffffffffffffffff81111561061557600080fd5b6106218482850161051c565b91505092915050565b61063381610928565b82525050565b61064a61064582610928565b6109fa565b82525050565b6106598161093a565b82525050565b61066881610946565b82525050565b600061067982610870565b610683818561087b565b9350610693818560208601610996565b61069c81610a86565b840191505092915050565b60006106b460008361088c565b91506106bf82610aa4565b600082019050919050565b6106d381610970565b82525050565b6106ea6106e582610970565b610a1e565b82525050565b6106f98161097a565b82525050565b600061070b8286610639565b60148201915061071b82856106d9565b60208201915061072a826106a7565b915061073682846106d9565b602082019150819050949350505050565b600060208201905061075c600083018461062a565b92915050565b60006020820190506107776000830184610650565b92915050565b6000602082019050610792600083018461065f565b92915050565b60006080820190506107ad600083018761065f565b6107ba60208301866106f0565b6107c7604083018561065f565b6107d4606083018461065f565b95945050505050565b600060208201905081810360008301526107f7818461066e565b905092915050565b600060208201905061081460008301846106ca565b92915050565b6000610824610835565b905061083082826109c9565b919050565b6000604051905090565b600067ffffffffffffffff82111561085a57610859610a57565b5b61086382610a86565b9050602081019050919050565b600081519050919050565b600082825260208201905092915050565b600081905092915050565b60006108a28261097a565b91506108ad8361097a565b92508260ff038211156108c3576108c2610a28565b5b828201905092915050565b60006108d982610970565b91506108e483610970565b9250817fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff048311821515161561091d5761091c610a28565b5b828202905092915050565b600061093382610950565b9050919050565b60008115159050919050565b6000819050919050565b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b6000819050919050565b600060ff82169050919050565b82818337600083830152505050565b60005b838110156109b4578082015181840152602081019050610999565b838111156109c3576000848401525b50505050565b6109d282610a86565b810181811067ffffffffffffffff821117156109f1576109f0610a57565b5b80604052505050565b6000610a0582610a0c565b9050919050565b6000610a1782610a97565b9050919050565b6000819050919050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601160045260246000fd5b7f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b6000601f19601f8301169050919050565b60008160601b9050919050565b50565b610ab081610928565b8114610abb57600080fd5b50565b610ac781610970565b8114610ad257600080fd5b5056fea2646970667358221220020a764c52d99dce0c77bd29149346580a21907fdaa8d104cf43372209dbefcb64736f6c63430008020033",
+	ABI: "[{\"inputs\":[],\"stateMutability\":\"payable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"name\":\"ShowChequeHash\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"name\":\"ShowChequeSig\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"ShowChequeSigner\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"ShowFrom\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"ShowNonce\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"name\":\"ShowPayCheckPack\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"name\":\"ShowPayChequeHash\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"ShowPayChequeSigner\",\"type\":\"event\"},{\"inputs\":[{\"components\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"tokenAddr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"Nonce\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"fromAddr\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"toAddr\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"opAddr\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"contractAddr\",\"type\":\"address\"}],\"internalType\":\"structCheque\",\"name\":\"cheque\",\"type\":\"tuple\"},{\"internalType\":\"bytes\",\"name\":\"chequeSig\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"payValue\",\"type\":\"uint256\"}],\"internalType\":\"structPayCheque\",\"name\":\"paycheque\",\"type\":\"tuple\"},{\"internalType\":\"bytes\",\"name\":\"paychequeSig\",\"type\":\"bytes\"}],\"name\":\"apply_cheque\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"node\",\"type\":\"address\"}],\"name\":\"get_node_nonce\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"nodeNonce\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
+	Bin: "0x6080604052610dfa806100136000396000f3fe6080604052600436106100345760003560e01c80631d728a0f146100395780635f510b7b1461007657806393b8fec4146100b3575b600080fd5b34801561004557600080fd5b50610060600480360381019061005b91906107ea565b6100e3565b60405161006d9190610afc565b60405180910390f35b34801561008257600080fd5b5061009d600480360381019061009891906107ea565b6100fb565b6040516100aa9190610afc565b60405180910390f35b6100cd60048036038101906100c89190610813565b610143565b6040516100da9190610a5f565b60405180910390f35b60006020528060005260406000206000915090505481565b60008060008373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff168152602001908152602001600020549050919050565b60007fe7d038274dbda90ba9b4a73bcf23a30cabd0a1567a2b29d19d2accf5399f030983600001516060015160405161017c9190610a44565b60405180910390a17faf3a06b91ffcbd286a1f609888182ab42c9bb71d1f95491bfe3bc6d300a481848360000151604001516040516101bb9190610afc565b60405180910390a17f749c515763629ce6c817505ed6443ae1cc62a6cdc59359c25057f575b418d0e183602001516040516101f69190610ada565b60405180910390a16000836000015160000151846000015160200151856000015160400151866000015160600151876000015160800151886000015160a00151896000015160c001516040516020016102559796959493929190610931565b60405160208183030381529060405290506000846000015160000151856000015160200151866000015160400151876000015160600151886000015160800151896000015160a001518a6000015160c001518b604001516040516020016102c39897969594939291906109b2565b60405160208183030381529060405290507fe254bf5fc12a7e7953bcdfd673d53edf48f7b614e7189fbfd2ddc3514d3abd48816040516103039190610ada565b60405180910390a16000828051906020012090506000828051906020012090507f58e8d67fffbff939e478cac4f59c309af09bfa219751076057be6947f5703a97826040516103529190610a7a565b60405180910390a17f267ef9c051dadf48f9d78139f8afcaab9b9ea923e2f62607fb90558d169399f0816040516103899190610a7a565b60405180910390a160006103a1838960200151610526565b90507fd992130aab86d2580aa88e21392e36739b1621554343d409620f0fb1e698b33d816040516103d29190610a44565b60405180910390a160006103e68389610526565b90507f129e8dff958b080ea26f69bc288d31037ee2127de5b7e3784e72ee7fdb8901e2816040516104179190610a44565b60405180910390a18173ffffffffffffffffffffffffffffffffffffffff16896000015160a0015173ffffffffffffffffffffffffffffffffffffffff1614801561049557508073ffffffffffffffffffffffffffffffffffffffff1689600001516060015173ffffffffffffffffffffffffffffffffffffffff16145b15610515576000670de0b6b3a76400008a604001516104b49190610bc0565b905089600001516080015173ffffffffffffffffffffffffffffffffffffffff166108fc829081150290604051600060405180830381858888f19350505050158015610504573d6000803e3d6000fd5b506001975050505050505050610520565b600096505050505050505b92915050565b6000604182511461053a5760009050610628565b60008060006020850151925060408501519150606085015160001a90507f7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a08260001c111561058e5760009350505050610628565b601b8160ff1610156105aa57601b816105a79190610b89565b90505b601b8160ff16141580156105c25750601c8160ff1614155b156105d35760009350505050610628565b600186828585604051600081526020016040526040516105f69493929190610a95565b6020604051602081039080840390855afa158015610618573d6000803e3d6000fd5b5050506020604051035193505050505b92915050565b600061064161063c84610b3c565b610b17565b90508281526020810184848401111561065957600080fd5b610664848285610c79565b509392505050565b60008135905061067b81610d96565b92915050565b600082601f83011261069257600080fd5b81356106a284826020860161062e565b91505092915050565b600060e082840312156106bd57600080fd5b6106c760e0610b17565b905060006106d7848285016107d5565b60008301525060206106eb8482850161066c565b60208301525060406106ff848285016107d5565b60408301525060606107138482850161066c565b60608301525060806107278482850161066c565b60808301525060a061073b8482850161066c565b60a08301525060c061074f8482850161066c565b60c08301525092915050565b6000610120828403121561076e57600080fd5b6107786060610b17565b90506000610788848285016106ab565b60008301525060e082013567ffffffffffffffff8111156107a857600080fd5b6107b484828501610681565b6020830152506101006107c9848285016107d5565b60408301525092915050565b6000813590506107e481610dad565b92915050565b6000602082840312156107fc57600080fd5b600061080a8482850161066c565b91505092915050565b6000806040838503121561082657600080fd5b600083013567ffffffffffffffff81111561084057600080fd5b61084c8582860161075b565b925050602083013567ffffffffffffffff81111561086957600080fd5b61087585828601610681565b9150509250929050565b61088881610c1a565b82525050565b61089f61089a82610c1a565b610cec565b82525050565b6108ae81610c2c565b82525050565b6108bd81610c38565b82525050565b60006108ce82610b6d565b6108d88185610b78565b93506108e8818560208601610c88565b6108f181610d78565b840191505092915050565b61090581610c62565b82525050565b61091c61091782610c62565b610d10565b82525050565b61092b81610c6c565b82525050565b600061093d828a61090b565b60208201915061094d828961088e565b60148201915061095d828861090b565b60208201915061096d828761088e565b60148201915061097d828661088e565b60148201915061098d828561088e565b60148201915061099d828461088e565b60148201915081905098975050505050505050565b60006109be828b61090b565b6020820191506109ce828a61088e565b6014820191506109de828961090b565b6020820191506109ee828861088e565b6014820191506109fe828761088e565b601482019150610a0e828661088e565b601482019150610a1e828561088e565b601482019150610a2e828461090b565b6020820191508190509998505050505050505050565b6000602082019050610a59600083018461087f565b92915050565b6000602082019050610a7460008301846108a5565b92915050565b6000602082019050610a8f60008301846108b4565b92915050565b6000608082019050610aaa60008301876108b4565b610ab76020830186610922565b610ac460408301856108b4565b610ad160608301846108b4565b95945050505050565b60006020820190508181036000830152610af481846108c3565b905092915050565b6000602082019050610b1160008301846108fc565b92915050565b6000610b21610b32565b9050610b2d8282610cbb565b919050565b6000604051905090565b600067ffffffffffffffff821115610b5757610b56610d49565b5b610b6082610d78565b9050602081019050919050565b600081519050919050565b600082825260208201905092915050565b6000610b9482610c6c565b9150610b9f83610c6c565b92508260ff03821115610bb557610bb4610d1a565b5b828201905092915050565b6000610bcb82610c62565b9150610bd683610c62565b9250817fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0483118215151615610c0f57610c0e610d1a565b5b828202905092915050565b6000610c2582610c42565b9050919050565b60008115159050919050565b6000819050919050565b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b6000819050919050565b600060ff82169050919050565b82818337600083830152505050565b60005b83811015610ca6578082015181840152602081019050610c8b565b83811115610cb5576000848401525b50505050565b610cc482610d78565b810181811067ffffffffffffffff82111715610ce357610ce2610d49565b5b80604052505050565b6000610cf782610cfe565b9050919050565b6000610d0982610d89565b9050919050565b6000819050919050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601160045260246000fd5b7f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b6000601f19601f8301169050919050565b60008160601b9050919050565b610d9f81610c1a565b8114610daa57600080fd5b50565b610db681610c62565b8114610dc157600080fd5b5056fea26469706673582212204d15163b537f232c2f9f2368bacba92b5be3555b385a11a4059f05fd7b31fc2e64736f6c63430008020033",
 }
 
 // CashABI is the input ABI used to generate the binding from.
@@ -221,25 +219,489 @@ func (_Cash *CashTransactorRaw) Transact(opts *bind.TransactOpts, method string,
 	return _Cash.Contract.contract.Transact(opts, method, params...)
 }
 
-// ApplyCheque is a paid mutator transaction binding the contract method 0xbabf8011.
+// GetNodeNonce is a free data retrieval call binding the contract method 0x5f510b7b.
 //
-// Solidity: function apply_cheque(((address,address,address,address,uint256,uint256),bytes,address,address,address,uint256) paycheque) payable returns(bool)
-func (_Cash *CashTransactor) ApplyCheque(opts *bind.TransactOpts, paycheque PayCheque) (*types.Transaction, error) {
-	return _Cash.contract.Transact(opts, "apply_cheque", paycheque)
+// Solidity: function get_node_nonce(address node) view returns(uint256)
+func (_Cash *CashCaller) GetNodeNonce(opts *bind.CallOpts, node common.Address) (*big.Int, error) {
+	var out []interface{}
+	err := _Cash.contract.Call(opts, &out, "get_node_nonce", node)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
-// ApplyCheque is a paid mutator transaction binding the contract method 0xbabf8011.
+// GetNodeNonce is a free data retrieval call binding the contract method 0x5f510b7b.
 //
-// Solidity: function apply_cheque(((address,address,address,address,uint256,uint256),bytes,address,address,address,uint256) paycheque) payable returns(bool)
-func (_Cash *CashSession) ApplyCheque(paycheque PayCheque) (*types.Transaction, error) {
-	return _Cash.Contract.ApplyCheque(&_Cash.TransactOpts, paycheque)
+// Solidity: function get_node_nonce(address node) view returns(uint256)
+func (_Cash *CashSession) GetNodeNonce(node common.Address) (*big.Int, error) {
+	return _Cash.Contract.GetNodeNonce(&_Cash.CallOpts, node)
 }
 
-// ApplyCheque is a paid mutator transaction binding the contract method 0xbabf8011.
+// GetNodeNonce is a free data retrieval call binding the contract method 0x5f510b7b.
 //
-// Solidity: function apply_cheque(((address,address,address,address,uint256,uint256),bytes,address,address,address,uint256) paycheque) payable returns(bool)
-func (_Cash *CashTransactorSession) ApplyCheque(paycheque PayCheque) (*types.Transaction, error) {
-	return _Cash.Contract.ApplyCheque(&_Cash.TransactOpts, paycheque)
+// Solidity: function get_node_nonce(address node) view returns(uint256)
+func (_Cash *CashCallerSession) GetNodeNonce(node common.Address) (*big.Int, error) {
+	return _Cash.Contract.GetNodeNonce(&_Cash.CallOpts, node)
+}
+
+// NodeNonce is a free data retrieval call binding the contract method 0x1d728a0f.
+//
+// Solidity: function nodeNonce(address ) view returns(uint256)
+func (_Cash *CashCaller) NodeNonce(opts *bind.CallOpts, arg0 common.Address) (*big.Int, error) {
+	var out []interface{}
+	err := _Cash.contract.Call(opts, &out, "nodeNonce", arg0)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// NodeNonce is a free data retrieval call binding the contract method 0x1d728a0f.
+//
+// Solidity: function nodeNonce(address ) view returns(uint256)
+func (_Cash *CashSession) NodeNonce(arg0 common.Address) (*big.Int, error) {
+	return _Cash.Contract.NodeNonce(&_Cash.CallOpts, arg0)
+}
+
+// NodeNonce is a free data retrieval call binding the contract method 0x1d728a0f.
+//
+// Solidity: function nodeNonce(address ) view returns(uint256)
+func (_Cash *CashCallerSession) NodeNonce(arg0 common.Address) (*big.Int, error) {
+	return _Cash.Contract.NodeNonce(&_Cash.CallOpts, arg0)
+}
+
+// ApplyCheque is a paid mutator transaction binding the contract method 0x93b8fec4.
+//
+// Solidity: function apply_cheque(((uint256,address,uint256,address,address,address,address),bytes,uint256) paycheque, bytes paychequeSig) payable returns(bool)
+func (_Cash *CashTransactor) ApplyCheque(opts *bind.TransactOpts, paycheque PayCheque, paychequeSig []byte) (*types.Transaction, error) {
+	return _Cash.contract.Transact(opts, "apply_cheque", paycheque, paychequeSig)
+}
+
+// ApplyCheque is a paid mutator transaction binding the contract method 0x93b8fec4.
+//
+// Solidity: function apply_cheque(((uint256,address,uint256,address,address,address,address),bytes,uint256) paycheque, bytes paychequeSig) payable returns(bool)
+func (_Cash *CashSession) ApplyCheque(paycheque PayCheque, paychequeSig []byte) (*types.Transaction, error) {
+	return _Cash.Contract.ApplyCheque(&_Cash.TransactOpts, paycheque, paychequeSig)
+}
+
+// ApplyCheque is a paid mutator transaction binding the contract method 0x93b8fec4.
+//
+// Solidity: function apply_cheque(((uint256,address,uint256,address,address,address,address),bytes,uint256) paycheque, bytes paychequeSig) payable returns(bool)
+func (_Cash *CashTransactorSession) ApplyCheque(paycheque PayCheque, paychequeSig []byte) (*types.Transaction, error) {
+	return _Cash.Contract.ApplyCheque(&_Cash.TransactOpts, paycheque, paychequeSig)
+}
+
+// CashShowChequeHashIterator is returned from FilterShowChequeHash and is used to iterate over the raw logs and unpacked data for ShowChequeHash events raised by the Cash contract.
+type CashShowChequeHashIterator struct {
+	Event *CashShowChequeHash // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *CashShowChequeHashIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(CashShowChequeHash)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(CashShowChequeHash)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *CashShowChequeHashIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *CashShowChequeHashIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// CashShowChequeHash represents a ShowChequeHash event raised by the Cash contract.
+type CashShowChequeHash struct {
+	Arg0 [32]byte
+	Raw  types.Log // Blockchain specific contextual infos
+}
+
+// FilterShowChequeHash is a free log retrieval operation binding the contract event 0x58e8d67fffbff939e478cac4f59c309af09bfa219751076057be6947f5703a97.
+//
+// Solidity: event ShowChequeHash(bytes32 arg0)
+func (_Cash *CashFilterer) FilterShowChequeHash(opts *bind.FilterOpts) (*CashShowChequeHashIterator, error) {
+
+	logs, sub, err := _Cash.contract.FilterLogs(opts, "ShowChequeHash")
+	if err != nil {
+		return nil, err
+	}
+	return &CashShowChequeHashIterator{contract: _Cash.contract, event: "ShowChequeHash", logs: logs, sub: sub}, nil
+}
+
+// WatchShowChequeHash is a free log subscription operation binding the contract event 0x58e8d67fffbff939e478cac4f59c309af09bfa219751076057be6947f5703a97.
+//
+// Solidity: event ShowChequeHash(bytes32 arg0)
+func (_Cash *CashFilterer) WatchShowChequeHash(opts *bind.WatchOpts, sink chan<- *CashShowChequeHash) (event.Subscription, error) {
+
+	logs, sub, err := _Cash.contract.WatchLogs(opts, "ShowChequeHash")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(CashShowChequeHash)
+				if err := _Cash.contract.UnpackLog(event, "ShowChequeHash", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseShowChequeHash is a log parse operation binding the contract event 0x58e8d67fffbff939e478cac4f59c309af09bfa219751076057be6947f5703a97.
+//
+// Solidity: event ShowChequeHash(bytes32 arg0)
+func (_Cash *CashFilterer) ParseShowChequeHash(log types.Log) (*CashShowChequeHash, error) {
+	event := new(CashShowChequeHash)
+	if err := _Cash.contract.UnpackLog(event, "ShowChequeHash", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// CashShowChequeSigIterator is returned from FilterShowChequeSig and is used to iterate over the raw logs and unpacked data for ShowChequeSig events raised by the Cash contract.
+type CashShowChequeSigIterator struct {
+	Event *CashShowChequeSig // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *CashShowChequeSigIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(CashShowChequeSig)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(CashShowChequeSig)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *CashShowChequeSigIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *CashShowChequeSigIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// CashShowChequeSig represents a ShowChequeSig event raised by the Cash contract.
+type CashShowChequeSig struct {
+	Arg0 []byte
+	Raw  types.Log // Blockchain specific contextual infos
+}
+
+// FilterShowChequeSig is a free log retrieval operation binding the contract event 0x749c515763629ce6c817505ed6443ae1cc62a6cdc59359c25057f575b418d0e1.
+//
+// Solidity: event ShowChequeSig(bytes arg0)
+func (_Cash *CashFilterer) FilterShowChequeSig(opts *bind.FilterOpts) (*CashShowChequeSigIterator, error) {
+
+	logs, sub, err := _Cash.contract.FilterLogs(opts, "ShowChequeSig")
+	if err != nil {
+		return nil, err
+	}
+	return &CashShowChequeSigIterator{contract: _Cash.contract, event: "ShowChequeSig", logs: logs, sub: sub}, nil
+}
+
+// WatchShowChequeSig is a free log subscription operation binding the contract event 0x749c515763629ce6c817505ed6443ae1cc62a6cdc59359c25057f575b418d0e1.
+//
+// Solidity: event ShowChequeSig(bytes arg0)
+func (_Cash *CashFilterer) WatchShowChequeSig(opts *bind.WatchOpts, sink chan<- *CashShowChequeSig) (event.Subscription, error) {
+
+	logs, sub, err := _Cash.contract.WatchLogs(opts, "ShowChequeSig")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(CashShowChequeSig)
+				if err := _Cash.contract.UnpackLog(event, "ShowChequeSig", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseShowChequeSig is a log parse operation binding the contract event 0x749c515763629ce6c817505ed6443ae1cc62a6cdc59359c25057f575b418d0e1.
+//
+// Solidity: event ShowChequeSig(bytes arg0)
+func (_Cash *CashFilterer) ParseShowChequeSig(log types.Log) (*CashShowChequeSig, error) {
+	event := new(CashShowChequeSig)
+	if err := _Cash.contract.UnpackLog(event, "ShowChequeSig", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// CashShowChequeSignerIterator is returned from FilterShowChequeSigner and is used to iterate over the raw logs and unpacked data for ShowChequeSigner events raised by the Cash contract.
+type CashShowChequeSignerIterator struct {
+	Event *CashShowChequeSigner // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *CashShowChequeSignerIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(CashShowChequeSigner)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(CashShowChequeSigner)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *CashShowChequeSignerIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *CashShowChequeSignerIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// CashShowChequeSigner represents a ShowChequeSigner event raised by the Cash contract.
+type CashShowChequeSigner struct {
+	Arg0 common.Address
+	Raw  types.Log // Blockchain specific contextual infos
+}
+
+// FilterShowChequeSigner is a free log retrieval operation binding the contract event 0xd992130aab86d2580aa88e21392e36739b1621554343d409620f0fb1e698b33d.
+//
+// Solidity: event ShowChequeSigner(address arg0)
+func (_Cash *CashFilterer) FilterShowChequeSigner(opts *bind.FilterOpts) (*CashShowChequeSignerIterator, error) {
+
+	logs, sub, err := _Cash.contract.FilterLogs(opts, "ShowChequeSigner")
+	if err != nil {
+		return nil, err
+	}
+	return &CashShowChequeSignerIterator{contract: _Cash.contract, event: "ShowChequeSigner", logs: logs, sub: sub}, nil
+}
+
+// WatchShowChequeSigner is a free log subscription operation binding the contract event 0xd992130aab86d2580aa88e21392e36739b1621554343d409620f0fb1e698b33d.
+//
+// Solidity: event ShowChequeSigner(address arg0)
+func (_Cash *CashFilterer) WatchShowChequeSigner(opts *bind.WatchOpts, sink chan<- *CashShowChequeSigner) (event.Subscription, error) {
+
+	logs, sub, err := _Cash.contract.WatchLogs(opts, "ShowChequeSigner")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(CashShowChequeSigner)
+				if err := _Cash.contract.UnpackLog(event, "ShowChequeSigner", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseShowChequeSigner is a log parse operation binding the contract event 0xd992130aab86d2580aa88e21392e36739b1621554343d409620f0fb1e698b33d.
+//
+// Solidity: event ShowChequeSigner(address arg0)
+func (_Cash *CashFilterer) ParseShowChequeSigner(log types.Log) (*CashShowChequeSigner, error) {
+	event := new(CashShowChequeSigner)
+	if err := _Cash.contract.UnpackLog(event, "ShowChequeSigner", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
 }
 
 // CashShowFromIterator is returned from FilterShowFrom and is used to iterate over the raw logs and unpacked data for ShowFrom events raised by the Cash contract.
@@ -370,140 +832,6 @@ func (_Cash *CashFilterer) WatchShowFrom(opts *bind.WatchOpts, sink chan<- *Cash
 func (_Cash *CashFilterer) ParseShowFrom(log types.Log) (*CashShowFrom, error) {
 	event := new(CashShowFrom)
 	if err := _Cash.contract.UnpackLog(event, "ShowFrom", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
-}
-
-// CashShowHashIterator is returned from FilterShowHash and is used to iterate over the raw logs and unpacked data for ShowHash events raised by the Cash contract.
-type CashShowHashIterator struct {
-	Event *CashShowHash // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *CashShowHashIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(CashShowHash)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(CashShowHash)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *CashShowHashIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *CashShowHashIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// CashShowHash represents a ShowHash event raised by the Cash contract.
-type CashShowHash struct {
-	Arg0 [32]byte
-	Raw  types.Log // Blockchain specific contextual infos
-}
-
-// FilterShowHash is a free log retrieval operation binding the contract event 0x745731c823271a437c86a7af6d16856092b7dcf98734a5b50c09c64562e5692f.
-//
-// Solidity: event ShowHash(bytes32 arg0)
-func (_Cash *CashFilterer) FilterShowHash(opts *bind.FilterOpts) (*CashShowHashIterator, error) {
-
-	logs, sub, err := _Cash.contract.FilterLogs(opts, "ShowHash")
-	if err != nil {
-		return nil, err
-	}
-	return &CashShowHashIterator{contract: _Cash.contract, event: "ShowHash", logs: logs, sub: sub}, nil
-}
-
-// WatchShowHash is a free log subscription operation binding the contract event 0x745731c823271a437c86a7af6d16856092b7dcf98734a5b50c09c64562e5692f.
-//
-// Solidity: event ShowHash(bytes32 arg0)
-func (_Cash *CashFilterer) WatchShowHash(opts *bind.WatchOpts, sink chan<- *CashShowHash) (event.Subscription, error) {
-
-	logs, sub, err := _Cash.contract.WatchLogs(opts, "ShowHash")
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(CashShowHash)
-				if err := _Cash.contract.UnpackLog(event, "ShowHash", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseShowHash is a log parse operation binding the contract event 0x745731c823271a437c86a7af6d16856092b7dcf98734a5b50c09c64562e5692f.
-//
-// Solidity: event ShowHash(bytes32 arg0)
-func (_Cash *CashFilterer) ParseShowHash(log types.Log) (*CashShowHash, error) {
-	event := new(CashShowHash)
-	if err := _Cash.contract.UnpackLog(event, "ShowHash", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -644,9 +972,9 @@ func (_Cash *CashFilterer) ParseShowNonce(log types.Log) (*CashShowNonce, error)
 	return event, nil
 }
 
-// CashShowPackIterator is returned from FilterShowPack and is used to iterate over the raw logs and unpacked data for ShowPack events raised by the Cash contract.
-type CashShowPackIterator struct {
-	Event *CashShowPack // Event containing the contract specifics and raw log
+// CashShowPayCheckPackIterator is returned from FilterShowPayCheckPack and is used to iterate over the raw logs and unpacked data for ShowPayCheckPack events raised by the Cash contract.
+type CashShowPayCheckPackIterator struct {
+	Event *CashShowPayCheckPack // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -660,7 +988,7 @@ type CashShowPackIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *CashShowPackIterator) Next() bool {
+func (it *CashShowPayCheckPackIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -669,7 +997,7 @@ func (it *CashShowPackIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(CashShowPack)
+			it.Event = new(CashShowPayCheckPack)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -684,7 +1012,7 @@ func (it *CashShowPackIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(CashShowPack)
+		it.Event = new(CashShowPayCheckPack)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -700,41 +1028,41 @@ func (it *CashShowPackIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *CashShowPackIterator) Error() error {
+func (it *CashShowPayCheckPackIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *CashShowPackIterator) Close() error {
+func (it *CashShowPayCheckPackIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// CashShowPack represents a ShowPack event raised by the Cash contract.
-type CashShowPack struct {
+// CashShowPayCheckPack represents a ShowPayCheckPack event raised by the Cash contract.
+type CashShowPayCheckPack struct {
 	Arg0 []byte
 	Raw  types.Log // Blockchain specific contextual infos
 }
 
-// FilterShowPack is a free log retrieval operation binding the contract event 0xa715a6946641bea3f72cecb3acc530b4c2bae0a20e41cb7b0022ef8f8750ece3.
+// FilterShowPayCheckPack is a free log retrieval operation binding the contract event 0xe254bf5fc12a7e7953bcdfd673d53edf48f7b614e7189fbfd2ddc3514d3abd48.
 //
-// Solidity: event ShowPack(bytes arg0)
-func (_Cash *CashFilterer) FilterShowPack(opts *bind.FilterOpts) (*CashShowPackIterator, error) {
+// Solidity: event ShowPayCheckPack(bytes arg0)
+func (_Cash *CashFilterer) FilterShowPayCheckPack(opts *bind.FilterOpts) (*CashShowPayCheckPackIterator, error) {
 
-	logs, sub, err := _Cash.contract.FilterLogs(opts, "ShowPack")
+	logs, sub, err := _Cash.contract.FilterLogs(opts, "ShowPayCheckPack")
 	if err != nil {
 		return nil, err
 	}
-	return &CashShowPackIterator{contract: _Cash.contract, event: "ShowPack", logs: logs, sub: sub}, nil
+	return &CashShowPayCheckPackIterator{contract: _Cash.contract, event: "ShowPayCheckPack", logs: logs, sub: sub}, nil
 }
 
-// WatchShowPack is a free log subscription operation binding the contract event 0xa715a6946641bea3f72cecb3acc530b4c2bae0a20e41cb7b0022ef8f8750ece3.
+// WatchShowPayCheckPack is a free log subscription operation binding the contract event 0xe254bf5fc12a7e7953bcdfd673d53edf48f7b614e7189fbfd2ddc3514d3abd48.
 //
-// Solidity: event ShowPack(bytes arg0)
-func (_Cash *CashFilterer) WatchShowPack(opts *bind.WatchOpts, sink chan<- *CashShowPack) (event.Subscription, error) {
+// Solidity: event ShowPayCheckPack(bytes arg0)
+func (_Cash *CashFilterer) WatchShowPayCheckPack(opts *bind.WatchOpts, sink chan<- *CashShowPayCheckPack) (event.Subscription, error) {
 
-	logs, sub, err := _Cash.contract.WatchLogs(opts, "ShowPack")
+	logs, sub, err := _Cash.contract.WatchLogs(opts, "ShowPayCheckPack")
 	if err != nil {
 		return nil, err
 	}
@@ -744,8 +1072,8 @@ func (_Cash *CashFilterer) WatchShowPack(opts *bind.WatchOpts, sink chan<- *Cash
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(CashShowPack)
-				if err := _Cash.contract.UnpackLog(event, "ShowPack", log); err != nil {
+				event := new(CashShowPayCheckPack)
+				if err := _Cash.contract.UnpackLog(event, "ShowPayCheckPack", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -766,21 +1094,21 @@ func (_Cash *CashFilterer) WatchShowPack(opts *bind.WatchOpts, sink chan<- *Cash
 	}), nil
 }
 
-// ParseShowPack is a log parse operation binding the contract event 0xa715a6946641bea3f72cecb3acc530b4c2bae0a20e41cb7b0022ef8f8750ece3.
+// ParseShowPayCheckPack is a log parse operation binding the contract event 0xe254bf5fc12a7e7953bcdfd673d53edf48f7b614e7189fbfd2ddc3514d3abd48.
 //
-// Solidity: event ShowPack(bytes arg0)
-func (_Cash *CashFilterer) ParseShowPack(log types.Log) (*CashShowPack, error) {
-	event := new(CashShowPack)
-	if err := _Cash.contract.UnpackLog(event, "ShowPack", log); err != nil {
+// Solidity: event ShowPayCheckPack(bytes arg0)
+func (_Cash *CashFilterer) ParseShowPayCheckPack(log types.Log) (*CashShowPayCheckPack, error) {
+	event := new(CashShowPayCheckPack)
+	if err := _Cash.contract.UnpackLog(event, "ShowPayCheckPack", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
 	return event, nil
 }
 
-// CashShowSigIterator is returned from FilterShowSig and is used to iterate over the raw logs and unpacked data for ShowSig events raised by the Cash contract.
-type CashShowSigIterator struct {
-	Event *CashShowSig // Event containing the contract specifics and raw log
+// CashShowPayChequeHashIterator is returned from FilterShowPayChequeHash and is used to iterate over the raw logs and unpacked data for ShowPayChequeHash events raised by the Cash contract.
+type CashShowPayChequeHashIterator struct {
+	Event *CashShowPayChequeHash // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -794,7 +1122,7 @@ type CashShowSigIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *CashShowSigIterator) Next() bool {
+func (it *CashShowPayChequeHashIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -803,7 +1131,7 @@ func (it *CashShowSigIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(CashShowSig)
+			it.Event = new(CashShowPayChequeHash)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -818,7 +1146,7 @@ func (it *CashShowSigIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(CashShowSig)
+		it.Event = new(CashShowPayChequeHash)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -834,41 +1162,41 @@ func (it *CashShowSigIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *CashShowSigIterator) Error() error {
+func (it *CashShowPayChequeHashIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *CashShowSigIterator) Close() error {
+func (it *CashShowPayChequeHashIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// CashShowSig represents a ShowSig event raised by the Cash contract.
-type CashShowSig struct {
-	Arg0 []byte
+// CashShowPayChequeHash represents a ShowPayChequeHash event raised by the Cash contract.
+type CashShowPayChequeHash struct {
+	Arg0 [32]byte
 	Raw  types.Log // Blockchain specific contextual infos
 }
 
-// FilterShowSig is a free log retrieval operation binding the contract event 0x769b78495bdc939f1cebbfbadf4ebc075e9f897031a598312365555d70019ff2.
+// FilterShowPayChequeHash is a free log retrieval operation binding the contract event 0x267ef9c051dadf48f9d78139f8afcaab9b9ea923e2f62607fb90558d169399f0.
 //
-// Solidity: event ShowSig(bytes arg0)
-func (_Cash *CashFilterer) FilterShowSig(opts *bind.FilterOpts) (*CashShowSigIterator, error) {
+// Solidity: event ShowPayChequeHash(bytes32 arg0)
+func (_Cash *CashFilterer) FilterShowPayChequeHash(opts *bind.FilterOpts) (*CashShowPayChequeHashIterator, error) {
 
-	logs, sub, err := _Cash.contract.FilterLogs(opts, "ShowSig")
+	logs, sub, err := _Cash.contract.FilterLogs(opts, "ShowPayChequeHash")
 	if err != nil {
 		return nil, err
 	}
-	return &CashShowSigIterator{contract: _Cash.contract, event: "ShowSig", logs: logs, sub: sub}, nil
+	return &CashShowPayChequeHashIterator{contract: _Cash.contract, event: "ShowPayChequeHash", logs: logs, sub: sub}, nil
 }
 
-// WatchShowSig is a free log subscription operation binding the contract event 0x769b78495bdc939f1cebbfbadf4ebc075e9f897031a598312365555d70019ff2.
+// WatchShowPayChequeHash is a free log subscription operation binding the contract event 0x267ef9c051dadf48f9d78139f8afcaab9b9ea923e2f62607fb90558d169399f0.
 //
-// Solidity: event ShowSig(bytes arg0)
-func (_Cash *CashFilterer) WatchShowSig(opts *bind.WatchOpts, sink chan<- *CashShowSig) (event.Subscription, error) {
+// Solidity: event ShowPayChequeHash(bytes32 arg0)
+func (_Cash *CashFilterer) WatchShowPayChequeHash(opts *bind.WatchOpts, sink chan<- *CashShowPayChequeHash) (event.Subscription, error) {
 
-	logs, sub, err := _Cash.contract.WatchLogs(opts, "ShowSig")
+	logs, sub, err := _Cash.contract.WatchLogs(opts, "ShowPayChequeHash")
 	if err != nil {
 		return nil, err
 	}
@@ -878,8 +1206,8 @@ func (_Cash *CashFilterer) WatchShowSig(opts *bind.WatchOpts, sink chan<- *CashS
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(CashShowSig)
-				if err := _Cash.contract.UnpackLog(event, "ShowSig", log); err != nil {
+				event := new(CashShowPayChequeHash)
+				if err := _Cash.contract.UnpackLog(event, "ShowPayChequeHash", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -900,21 +1228,21 @@ func (_Cash *CashFilterer) WatchShowSig(opts *bind.WatchOpts, sink chan<- *CashS
 	}), nil
 }
 
-// ParseShowSig is a log parse operation binding the contract event 0x769b78495bdc939f1cebbfbadf4ebc075e9f897031a598312365555d70019ff2.
+// ParseShowPayChequeHash is a log parse operation binding the contract event 0x267ef9c051dadf48f9d78139f8afcaab9b9ea923e2f62607fb90558d169399f0.
 //
-// Solidity: event ShowSig(bytes arg0)
-func (_Cash *CashFilterer) ParseShowSig(log types.Log) (*CashShowSig, error) {
-	event := new(CashShowSig)
-	if err := _Cash.contract.UnpackLog(event, "ShowSig", log); err != nil {
+// Solidity: event ShowPayChequeHash(bytes32 arg0)
+func (_Cash *CashFilterer) ParseShowPayChequeHash(log types.Log) (*CashShowPayChequeHash, error) {
+	event := new(CashShowPayChequeHash)
+	if err := _Cash.contract.UnpackLog(event, "ShowPayChequeHash", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
 	return event, nil
 }
 
-// CashShowSignerIterator is returned from FilterShowSigner and is used to iterate over the raw logs and unpacked data for ShowSigner events raised by the Cash contract.
-type CashShowSignerIterator struct {
-	Event *CashShowSigner // Event containing the contract specifics and raw log
+// CashShowPayChequeSignerIterator is returned from FilterShowPayChequeSigner and is used to iterate over the raw logs and unpacked data for ShowPayChequeSigner events raised by the Cash contract.
+type CashShowPayChequeSignerIterator struct {
+	Event *CashShowPayChequeSigner // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -928,7 +1256,7 @@ type CashShowSignerIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *CashShowSignerIterator) Next() bool {
+func (it *CashShowPayChequeSignerIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -937,7 +1265,7 @@ func (it *CashShowSignerIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(CashShowSigner)
+			it.Event = new(CashShowPayChequeSigner)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -952,7 +1280,7 @@ func (it *CashShowSignerIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(CashShowSigner)
+		it.Event = new(CashShowPayChequeSigner)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -968,41 +1296,41 @@ func (it *CashShowSignerIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *CashShowSignerIterator) Error() error {
+func (it *CashShowPayChequeSignerIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *CashShowSignerIterator) Close() error {
+func (it *CashShowPayChequeSignerIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// CashShowSigner represents a ShowSigner event raised by the Cash contract.
-type CashShowSigner struct {
+// CashShowPayChequeSigner represents a ShowPayChequeSigner event raised by the Cash contract.
+type CashShowPayChequeSigner struct {
 	Arg0 common.Address
 	Raw  types.Log // Blockchain specific contextual infos
 }
 
-// FilterShowSigner is a free log retrieval operation binding the contract event 0x19e241431b2317b16d0f71f8af360a0eb20fbdbfdb535358dc6136c9f1b5cada.
+// FilterShowPayChequeSigner is a free log retrieval operation binding the contract event 0x129e8dff958b080ea26f69bc288d31037ee2127de5b7e3784e72ee7fdb8901e2.
 //
-// Solidity: event ShowSigner(address arg0)
-func (_Cash *CashFilterer) FilterShowSigner(opts *bind.FilterOpts) (*CashShowSignerIterator, error) {
+// Solidity: event ShowPayChequeSigner(address arg0)
+func (_Cash *CashFilterer) FilterShowPayChequeSigner(opts *bind.FilterOpts) (*CashShowPayChequeSignerIterator, error) {
 
-	logs, sub, err := _Cash.contract.FilterLogs(opts, "ShowSigner")
+	logs, sub, err := _Cash.contract.FilterLogs(opts, "ShowPayChequeSigner")
 	if err != nil {
 		return nil, err
 	}
-	return &CashShowSignerIterator{contract: _Cash.contract, event: "ShowSigner", logs: logs, sub: sub}, nil
+	return &CashShowPayChequeSignerIterator{contract: _Cash.contract, event: "ShowPayChequeSigner", logs: logs, sub: sub}, nil
 }
 
-// WatchShowSigner is a free log subscription operation binding the contract event 0x19e241431b2317b16d0f71f8af360a0eb20fbdbfdb535358dc6136c9f1b5cada.
+// WatchShowPayChequeSigner is a free log subscription operation binding the contract event 0x129e8dff958b080ea26f69bc288d31037ee2127de5b7e3784e72ee7fdb8901e2.
 //
-// Solidity: event ShowSigner(address arg0)
-func (_Cash *CashFilterer) WatchShowSigner(opts *bind.WatchOpts, sink chan<- *CashShowSigner) (event.Subscription, error) {
+// Solidity: event ShowPayChequeSigner(address arg0)
+func (_Cash *CashFilterer) WatchShowPayChequeSigner(opts *bind.WatchOpts, sink chan<- *CashShowPayChequeSigner) (event.Subscription, error) {
 
-	logs, sub, err := _Cash.contract.WatchLogs(opts, "ShowSigner")
+	logs, sub, err := _Cash.contract.WatchLogs(opts, "ShowPayChequeSigner")
 	if err != nil {
 		return nil, err
 	}
@@ -1012,8 +1340,8 @@ func (_Cash *CashFilterer) WatchShowSigner(opts *bind.WatchOpts, sink chan<- *Ca
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(CashShowSigner)
-				if err := _Cash.contract.UnpackLog(event, "ShowSigner", log); err != nil {
+				event := new(CashShowPayChequeSigner)
+				if err := _Cash.contract.UnpackLog(event, "ShowPayChequeSigner", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -1034,12 +1362,12 @@ func (_Cash *CashFilterer) WatchShowSigner(opts *bind.WatchOpts, sink chan<- *Ca
 	}), nil
 }
 
-// ParseShowSigner is a log parse operation binding the contract event 0x19e241431b2317b16d0f71f8af360a0eb20fbdbfdb535358dc6136c9f1b5cada.
+// ParseShowPayChequeSigner is a log parse operation binding the contract event 0x129e8dff958b080ea26f69bc288d31037ee2127de5b7e3784e72ee7fdb8901e2.
 //
-// Solidity: event ShowSigner(address arg0)
-func (_Cash *CashFilterer) ParseShowSigner(log types.Log) (*CashShowSigner, error) {
-	event := new(CashShowSigner)
-	if err := _Cash.contract.UnpackLog(event, "ShowSigner", log); err != nil {
+// Solidity: event ShowPayChequeSigner(address arg0)
+func (_Cash *CashFilterer) ParseShowPayChequeSigner(log types.Log) (*CashShowPayChequeSigner, error) {
+	event := new(CashShowPayChequeSigner)
+	if err := _Cash.contract.UnpackLog(event, "ShowPayChequeSigner", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log

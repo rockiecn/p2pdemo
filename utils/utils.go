@@ -21,7 +21,6 @@ import (
 	"github.com/rockiecn/p2pdemo/hostops"
 	"github.com/rockiecn/p2pdemo/pb"
 	"github.com/rockiecn/p2pdemo/print"
-	"github.com/rockiecn/p2pdemo/sigapi"
 )
 
 /*
@@ -96,29 +95,86 @@ func CalcHash(From string, int64Nonce int64, stAddress string, int64PayAmount in
 	return hash
 }
 
-// calculate Cheque hash with marshaled Cheque, used as Cheque id.
-func CalcChequeHash(ChequeMarshaled []byte) []byte {
+// calculate Cheque hash
+func CalcChequeHash(Cheque *pb.Cheque) []byte {
 	// unmarshal Cheque
-	Cheque := &pb.Cheque{}
-	if err := proto.Unmarshal(ChequeMarshaled, Cheque); err != nil {
-		log.Fatalln("Failed to parse check:", err)
-	}
+	// Cheque := &pb.Cheque{}
+	// if err := proto.Unmarshal(ChequeMarshaled, Cheque); err != nil {
+	// 	log.Fatalln("Failed to parse check:", err)
+	// }
 
 	// calc hash 32 bytes
-	bigNonce := big.NewInt(Cheque.NodeNonce)
-	hash := crypto.Keccak256([]byte(Cheque.To), bigNonce.Bytes())
+	bigValue := big.NewInt(Cheque.Value)
+	valuePad32 := common.LeftPadBytes(bigValue.Bytes(), 32)
+
+	bigNonce := big.NewInt(Cheque.Nonce)
+	noncePad32 := common.LeftPadBytes(bigNonce.Bytes(), 32)
+
+	tokenBytes, _ := hex.DecodeString(Cheque.TokenAddress)
+	fromBytes, _ := hex.DecodeString(Cheque.From)
+	toBytes, _ := hex.DecodeString(Cheque.To)
+	operatorBytes, _ := hex.DecodeString(Cheque.OperatorAddress)
+	contractBytes, _ := hex.DecodeString(Cheque.ContractAddress)
+
+	hash := crypto.Keccak256(
+		valuePad32,
+		tokenBytes,
+		noncePad32,
+		fromBytes,
+		toBytes,
+		operatorBytes,
+		contractBytes,
+	)
 	return hash
 }
 
-// generate Cheque key from storage address and nonce
-func GenChequeKey(addr string, nonce *big.Int) ([]byte, error) {
-	addrByte := []byte(addr)
+// calculate Cheque hash
+func CalcPayChequeHash(PayCheque *pb.PayCheque) []byte {
 
-	keyByte := MergeSlice(addrByte, nonce.Bytes())
+	// calc hash 32 bytes
+	bigValue := big.NewInt(PayCheque.Cheque.Value)
+	valuePad32 := common.LeftPadBytes(bigValue.Bytes(), 32)
+
+	bigNonce := big.NewInt(PayCheque.Cheque.Nonce)
+	noncePad32 := common.LeftPadBytes(bigNonce.Bytes(), 32)
+
+	bigPayValue := big.NewInt(PayCheque.PayValue)
+	payvaluePad32 := common.LeftPadBytes(bigPayValue.Bytes(), 32)
+
+	tokenBytes, _ := hex.DecodeString(PayCheque.Cheque.TokenAddress)
+	fromBytes, _ := hex.DecodeString(PayCheque.Cheque.From)
+	toBytes, _ := hex.DecodeString(PayCheque.Cheque.To)
+	operatorBytes, _ := hex.DecodeString(PayCheque.Cheque.OperatorAddress)
+	contractBytes, _ := hex.DecodeString(PayCheque.Cheque.ContractAddress)
+
+	hash := crypto.Keccak256(
+		valuePad32,
+		tokenBytes,
+		noncePad32,
+		fromBytes,
+		toBytes,
+		operatorBytes,
+		contractBytes,
+		payvaluePad32,
+	)
+	return hash
+}
+
+// generate Cheque key from operator address, storage address and nonce
+//func GenChequeKey(addr string, nonce *big.Int) ([]byte, error) {
+func GenChequeKey(Cheque *pb.Cheque) ([]byte, error) {
+
+	bigNonce := big.NewInt(Cheque.Nonce)
+
+	opByte := []byte(Cheque.OperatorAddress)
+	toByte := []byte(Cheque.To)
+
+	keyByte := MergeSlice(opByte, toByte)
+	keyByte = MergeSlice(keyByte, bigNonce.Bytes())
 	if global.DEBUG {
 		fmt.Printf("in GenChequeKey\n")
-		fmt.Printf("storage addr:%s\n", []byte(addr))
-		fmt.Printf("nonce:%x\n", nonce.Bytes())
+		fmt.Printf("storage addr:%s\n", []byte(Cheque.OperatorAddress))
+		fmt.Printf("nonce:%x\n", bigNonce.Bytes())
 		fmt.Printf("keyByte:%x\n", keyByte)
 	}
 	return keyByte, nil
@@ -195,34 +251,38 @@ func ListPayCheque(user bool) {
 	for id < len(Index) {
 
 		// get data
-		var PayChequeMarshaled []byte
+		var in []byte
 		keyByte, err := hex.DecodeString(Index[id])
 		if err != nil {
 			fmt.Println("decodeString error:", err.Error())
 			return
 		}
-		PayChequeMarshaled, err = db.Get(keyByte, nil)
+		in, err = db.Get(keyByte, nil)
 		if err != nil {
 			fmt.Println("db get error: ", err)
 			return
 		}
+
+		PayChequeMarshaled := in[65:]
+
 		// unmarshal it to get Cheque itself
 		PayCheque := &pb.PayCheque{}
 		if err := proto.Unmarshal(PayChequeMarshaled, PayCheque); err != nil {
-			log.Fatalln("Failed to parse check:", err)
+			log.Println("Failed to parse paycheck:", err)
+			return
 		}
 
 		// transmit to string
 		strID := strconv.Itoa(id)
 		strValue := strconv.FormatInt(PayCheque.Cheque.Value, 10)
 		strPayValue := strconv.FormatInt(PayCheque.PayValue, 10)
-		strNonce := strconv.FormatInt(PayCheque.Cheque.NodeNonce, 10)
+		strNonce := strconv.FormatInt(PayCheque.Cheque.Nonce, 10)
 
 		//
 		value := map[string]string{
 			"ID":       strID,
-			"FROM":     PayCheque.From,
-			"TO":       PayCheque.To,
+			"FROM":     PayCheque.Cheque.From,
+			"TO":       PayCheque.Cheque.To,
 			"VALUE":    strValue,
 			"PAYVALUE": strPayValue,
 			"NONCE":    strNonce,
@@ -258,52 +318,11 @@ func SendChequeByKey(key []byte) error {
 		return err
 	}
 
-	var PayChequeMarshaled []byte
-	PayChequeMarshaled, err = db.Get(key, nil)
-	if err != nil {
+	msg, err2 := db.Get(key, nil)
+	if err2 != nil {
 		log.Println("db.Get error:", err)
 		return err
 	}
-
-	// unmarshal it to get Cheque itself
-	PayCheque := &pb.PayCheque{}
-	if err := proto.Unmarshal(PayChequeMarshaled, PayCheque); err != nil {
-		log.Fatalln("Failed to parse pay check:", err)
-		return err
-	}
-
-	if global.DEBUG {
-		print.Println100ms("-> Pay cheque info:")
-		print.PrintPayCheque(PayCheque)
-	}
-
-	// PayCheque should be created, signed and sent by user
-
-	// calc hash from PayCheque
-	hash := CalcHash(PayCheque.Cheque.From, PayCheque.Cheque.NodeNonce, PayCheque.To, PayCheque.PayValue)
-	if global.DEBUG {
-		print.Printf100ms("DEBUG> hash: %x\n", hash)
-	}
-	// sign PayCheque by user' sk
-	// user address: 1ab6a9f2b90004c1269563b5da391250ede3c114
-	//var userSkByte = []byte("b91c265cabae210642d66f9d59137eac2fab2674f4c1c88df3b8e9e6c1f74f9f")
-	var userSkByte = global.UserSK
-	PayChequeSig, err := sigapi.Sign(hash, userSkByte)
-	if err != nil {
-		log.Print("sign error")
-		return err
-	}
-
-	if global.DEBUG {
-		// for debug
-		print.Printf100ms("DEBUG> From: %s\n", PayCheque.Cheque.From)
-		print.Printf100ms("DEBUG> NodeNonce: %d\n", PayCheque.Cheque.NodeNonce)
-		print.Printf100ms("DEBUG> To: %s\n", PayCheque.To)
-		print.Printf100ms("DEBUG> PayValue: %d\n", PayCheque.PayValue)
-		print.Printf100ms("DEBUG> signature: %x\n", PayChequeSig)
-	}
-
-	msg := MergeSlice(PayChequeSig, PayChequeMarshaled)
 
 	// send PayCheque msg to storage
 	print.Println100ms("--> Sending PayCheque and sig to storage")
@@ -329,12 +348,15 @@ func IncPayValueByKey(key []byte) error {
 	}
 	defer db.Close()
 
-	var PayChequeMarshaled []byte
-	PayChequeMarshaled, err = db.Get(key, nil)
+	var msg []byte
+	msg, err = db.Get(key, nil)
 	if err != nil {
 		log.Println("db.Get error:", err)
 		return err
 	}
+
+	PayChequeSig := msg[:65]
+	PayChequeMarshaled := msg[65:]
 
 	// unmarshal it to get Cheque itself
 	PayCheque := &pb.PayCheque{}
@@ -366,8 +388,11 @@ func IncPayValueByKey(key []byte) error {
 		return err
 	}
 
+	// rewrite updated paycheque
+	msg = MergeSlice(PayChequeSig, PayChequeMarshaled)
+
 	// put into db
-	err = db.Put(key, PayChequeMarshaled, nil)
+	err = db.Put(key, msg, nil)
 	if err != nil {
 		fmt.Println("put paycheque error:", err)
 		return err
@@ -394,5 +419,37 @@ func IDtoKey(uID uint, user bool) ([]byte, error) {
 	}
 
 	return keyByte, nil
+
+}
+
+// show pay cheque info by key
+func ShowPayChequeInfoByKey(key []byte) error {
+	// create/open db
+	db, err := leveldb.OpenFile("./paycheque.db", nil)
+	if err != nil {
+		log.Println("opfen db error")
+		return err
+	}
+	defer db.Close()
+
+	msg, err2 := db.Get(key, nil)
+	if err2 != nil {
+		log.Println("db.Get error:", err)
+		return err
+	}
+
+	PayChequeSig := msg[:65]
+	PayChequeMarshaled := msg[65:]
+	// unmarshal it to get Cheque itself
+	PayCheque := &pb.PayCheque{}
+	if err := proto.Unmarshal(PayChequeMarshaled, PayCheque); err != nil {
+		log.Println("Failed to parse pay check:", err)
+		return err
+	}
+
+	print.PrintPayCheque(PayCheque)
+	print.Printf100ms("PayChequeSig: %x\n", PayChequeSig)
+
+	return nil
 
 }

@@ -13,7 +13,7 @@ import (
 func PrintCheque(Cheque *pb.Cheque) {
 	Println100ms("------------------ Print Cheque ------------------")
 	Printf100ms("->Cheque.Value: %d\n", Cheque.Value)
-	Printf100ms("->Cheque.NodeNonce: %d\n", Cheque.NodeNonce)
+	Printf100ms("->Cheque.Nonce: %d\n", Cheque.Nonce)
 	Printf100ms("->Cheque.OperatorAddress: %s\n", Cheque.OperatorAddress)
 	Printf100ms("->Cheque.From: %s\n", Cheque.From)
 	Printf100ms("->Cheque.TokenAddress: %s\n", Cheque.TokenAddress)
@@ -22,16 +22,15 @@ func PrintCheque(Cheque *pb.Cheque) {
 
 func PrintPayCheque(PayCheque *pb.PayCheque) {
 	Println100ms("-------------------- Print PayCheque ------------------")
-	Printf100ms("->Cheque.MaxAmount: %d\n", PayCheque.Cheque.Value)
-	Printf100ms("->Cheque.NodeNonce: %d\n", PayCheque.Cheque.NodeNonce)
-	Printf100ms("->Cheque.OperatorAddress: %s\n", PayCheque.Cheque.OperatorAddress)
-	Printf100ms("->Cheque.From: %s\n", PayCheque.Cheque.From)
+	Printf100ms("->Cheque.Value: %d\n", PayCheque.Cheque.Value)
 	Printf100ms("->Cheque.TokenAddress: %s\n", PayCheque.Cheque.TokenAddress)
+	Printf100ms("->Cheque.NodeNonce: %d\n", PayCheque.Cheque.Nonce)
+	Printf100ms("->Cheque.From: %s\n", PayCheque.Cheque.From)
+	Printf100ms("->Cheque.To: %s\n", PayCheque.Cheque.To)
+	Printf100ms("->Cheque.OperatorAddress: %s\n", PayCheque.Cheque.OperatorAddress)
+	Printf100ms("->PayCheque.CashAddress: %s\n", PayCheque.Cheque.ContractAddress)
 	Printf100ms("->PayCheque.ChequeSig: %x\n", PayCheque.ChequeSig)
-	Printf100ms("->PayCheque.CashAddress: %s\n", PayCheque.CashAddress)
 	Printf100ms("->PayCheque.PayValue: %d\n", PayCheque.PayValue)
-	Printf100ms("->PayCheque.From: %s\n", PayCheque.From)
-	Printf100ms("->PayCheque.To: %s\n", PayCheque.To)
 	Println100ms("----------------------------------------------------")
 }
 
@@ -81,11 +80,12 @@ func PrintMenu() {
 	fmt.Println("               lu -: [USER]      List user's PayCheque table")
 	fmt.Println("               du -: [USER]      Delete a paycheque from user db")
 	fmt.Println("               is *: [USER]      Increase payvalue and send cheque")
-	fmt.Println("               cu +: [USER]      Clear user db")
-	fmt.Println("               ls +: [STORAGE]   List storage's PayCheque table")
-	fmt.Println("               ds +: [STORAGE]   Delete a paycheque from storage db")
+	fmt.Println("               cu -: [USER]      Clear user db")
+	fmt.Println("               sh -: [USER]      Show paycheque info")
+	fmt.Println("               ls -: [STORAGE]   List storage's PayCheque table")
+	fmt.Println("               ds -: [STORAGE]   Delete a paycheque from storage db")
 	fmt.Println("               cc +: [STORAGE]   Call apply cheque")
-	fmt.Println("               cs +: [STORAGE]   Clear storage db")
+	fmt.Println("               cs -: [STORAGE]   Clear storage db")
 	//fmt.Println("               t  +: [TEST]      Call retrieve in storage")
 	fmt.Println("              ====================================================")
 

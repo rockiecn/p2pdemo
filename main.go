@@ -113,6 +113,8 @@ func main() {
 			execmd.ClearDB(true)
 		case "cs":
 			execmd.ClearDB(false)
+		case "sh":
+			execmd.ShowPayChequeByID()
 		}
 	}
 }

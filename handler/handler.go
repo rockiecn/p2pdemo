@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/libp2p/go-libp2p-core/network"
@@ -30,13 +29,11 @@ func BuyCheckHandler(s network.Stream) error {
 
 	// construct Cheque
 	Cheque := &pb.Cheque{}
-	Cheque.Value = 100 // Cheque 100
-	//Cheque.NodeNonce = 1
-
-	Cheque.OperatorAddress = "9e0153496067c20943724b79515472195a7aedaa" // operator
+	Cheque.Value = 100                                                  // Cheque 100
+	Cheque.TokenAddress = "b213d01542d129806d664248a380db8b12059061"    // token address
 	Cheque.From = "1ab6a9f2b90004c1269563b5da391250ede3c114"            // user
 	Cheque.To = "b213d01542d129806d664248a380db8b12059061"              // storage
-	Cheque.TokenAddress = "testtesttesttesttesttesttesttesttesttest"
+	Cheque.OperatorAddress = "9e0153496067c20943724b79515472195a7aedaa" // operator
 
 	// create/open db
 	db, err := leveldb.OpenFile("./operator_data.db", nil)
@@ -51,10 +48,10 @@ func BuyCheckHandler(s network.Stream) error {
 	if err != nil {
 		if err.Error() == "leveldb: not found" { // no nonce at all
 			db.Put([]byte(Cheque.To), utils.Int64ToBytes(1), nil)
-		} else {
-			fmt.Println("operator db get nonce error: ", err)
-			return err
 		}
+		fmt.Println("operator db get nonce error: ", err)
+		return err
+
 	}
 
 	// increase nonce by 1
@@ -73,7 +70,23 @@ func BuyCheckHandler(s network.Stream) error {
 	}
 
 	//
-	Cheque.NodeNonce = newNonce
+	Cheque.Nonce = newNonce
+
+	contractAddrByte, err := db.Get([]byte("contractAddr"), nil)
+	if err != nil {
+		log.Println("!! get cash address error:", err)
+		return err
+	}
+
+	// contract address, delete prefix '0x'
+	contractAddrByte = contractAddrByte[2:]
+	Cheque.ContractAddress = string(contractAddrByte) // contract address
+
+	// if global.DEBUG {
+	// 	print.Printf100ms("sigByte:%x\n", sigByte)
+	// 	print.Printf100ms("contractAddr:%s\n", Cheque.ContractAddress)
+	// 	print.Printf100ms("ChequeMarshaled:%x\n", ChequeMarshaled)
+	// }
 
 	// serialize
 	ChequeMarshaled, err := proto.Marshal(Cheque)
@@ -84,8 +97,10 @@ func BuyCheckHandler(s network.Stream) error {
 	// construct Cheque message: sig(65 bytes) | data
 	print.Println100ms("-> constructing msg")
 
-	// calc hash
-	hash := utils.CalcHash(Cheque.From, Cheque.NodeNonce, "", 0)
+	//hash := utils.CalcHash(Cheque.From, Cheque.Nonce, "", 0)
+	// calc cheque hash
+	hash := utils.CalcChequeHash(Cheque)
+
 	print.Printf100ms("Cheque send, hash: %x\n", hash)
 
 	// sign Cheque by operator
@@ -96,24 +111,9 @@ func BuyCheckHandler(s network.Stream) error {
 		log.Fatal("sign error:", err)
 	}
 
-	cashAddrByte, err := db.Get([]byte("cashAddr"), nil)
-	if err != nil {
-		log.Fatal("get cash address error:", err)
-	}
-
-	// delete prefix '0x'
-	cashAddrByte = cashAddrByte[2:]
-
-	if global.DEBUG {
-		print.Printf100ms("sigByte:%x\n", sigByte)
-		print.Printf100ms("cashAddr:%s\n", cashAddrByte)
-		print.Printf100ms("ChequeMarshaled:%x\n", ChequeMarshaled)
-	}
-
-	// sig(65) | cash address(40) | cheque
+	// sig(65) | cheque
 	var msg = []byte{}
-	msg = utils.MergeSlice(sigByte, cashAddrByte)
-	msg = utils.MergeSlice(msg, ChequeMarshaled)
+	msg = utils.MergeSlice(sigByte, ChequeMarshaled)
 
 	print.Println100ms("-> sending msg")
 	// send msg
@@ -167,7 +167,7 @@ func SendCheckHandler(s network.Stream) error {
 	// unmarshal data
 	PayCheque := &pb.PayCheque{}
 	if err := proto.Unmarshal(PayChequeMarshaled, PayCheque); err != nil {
-		log.Fatalln("Failed to parse check:", err)
+		log.Println("Failed to parse paycheck:", err)
 		return err
 	}
 
@@ -185,7 +185,9 @@ func SendCheckHandler(s network.Stream) error {
 	From := common.BytesToAddress(fromAddrByte)
 
 	// calc hash from PayCheque
-	hash := utils.CalcHash(PayCheque.Cheque.From, PayCheque.Cheque.NodeNonce, PayCheque.To, PayCheque.PayValue)
+	//hash := utils.CalcHash(PayCheque.Cheque.From, PayCheque.Cheque.Nonce, PayCheque.Cheque.To, PayCheque.PayValue)
+	hash := utils.CalcPayChequeHash(PayCheque)
+	fmt.Printf("paycheque hash:%x\n", hash)
 
 	if global.DEBUG {
 		fmt.Printf("hash: %x\n", hash)
@@ -213,9 +215,9 @@ func SendCheckHandler(s network.Stream) error {
 	}
 
 	// gen Cheque key: To + nonce
-	bigNonce := big.NewInt(PayCheque.Cheque.NodeNonce)
 	var ChequeKey []byte
-	ChequeKey, err = utils.GenChequeKey(PayCheque.Cheque.To, bigNonce)
+	//ChequeKey, err = utils.GenChequeKey(PayCheque.Cheque.To, bigNonce)
+	ChequeKey, err = utils.GenChequeKey(PayCheque.Cheque)
 	if err != nil {
 		log.Fatal("GenChequeKey error:", err)
 	}
@@ -225,9 +227,9 @@ func SendCheckHandler(s network.Stream) error {
 		fmt.Printf("ChequeKey: %x\n", ChequeKey)
 	}
 
-	// use PayChequeKey as PayCheque id to store PayChequeMarshaled.
+	// use PayChequeKey as PayCheque id to store PayChequeMarshaled | paychequeSig
 	//PayChequeMarshWithSig := utils.MergeSlice(sigByte, PayChequeMarshaled)
-	err = db.Put(ChequeKey, PayChequeMarshaled, nil)
+	err = db.Put(ChequeKey, in, nil)
 	if err != nil {
 		print.Println100ms("db put data error")
 		return err
