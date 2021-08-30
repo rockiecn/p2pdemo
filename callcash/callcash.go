@@ -3,7 +3,6 @@ package callcash
 import (
 	"context"
 	"crypto/ecdsa"
-	"encoding/hex"
 	"fmt"
 	"log"
 	"math/big"
@@ -17,67 +16,8 @@ import (
 	"github.com/rockiecn/p2pdemo/clientops"
 	"github.com/rockiecn/p2pdemo/global"
 	"github.com/rockiecn/p2pdemo/hostops"
+	"github.com/rockiecn/p2pdemo/print"
 )
-
-// CallApplyCheque - send tx to contract to call apply cheque method.
-// func CallApplyPayCheque(
-// 	userAddr common.Address,
-// 	nonce *big.Int,
-// 	stAddr common.Address,
-// 	PayValue *big.Int,
-// 	sig []byte) error {
-// 	fmt.Println("HOST: ", hostops.HOST)
-func CallApplyPayCheque(paycheque cash.PayCheque, paychequeSig []byte) error {
-	cli, err := clientops.GetClient(hostops.HOST)
-	if err != nil {
-		fmt.Println("failed to dial geth", err)
-		return err
-	}
-	defer cli.Close()
-
-	// string decode to hex
-	storageHexByte, err := hex.DecodeString(global.StrStorageSK)
-	if err != nil {
-		fmt.Println("callcash.go. decode string error", err)
-		return err
-	}
-	// byte to string
-	storageSKHexString := hex.EncodeToString(storageHexByte)
-	// fmt.Printf("hex strStorageSK x: %x\n", storageSKHexString)
-	// fmt.Printf("hex strStorageSK s: %s\n", storageSKHexString)
-	auth, err := clientops.MakeAuth(storageSKHexString, nil, nil, big.NewInt(1000), 9000000)
-	if err != nil {
-		return err
-	}
-
-	// get contract instance from address
-	cashInstance, err := cash.NewCash(paycheque.Cheque.ContractAddr, cli)
-	if err != nil {
-		fmt.Println("NewCash err: ", err)
-		return err
-	}
-
-	fmt.Printf("cheque.value: %s\n", paycheque.Cheque.Value)
-	fmt.Printf("cheque.TokenAddr: %s\n", paycheque.Cheque.TokenAddr)
-	fmt.Printf("cheque.Nonce: %s\n", paycheque.Cheque.Nonce.String())
-	fmt.Printf("cheque.FromAddr: %s\n", paycheque.Cheque.FromAddr)
-	fmt.Printf("cheque.ToAddr: %s\n", paycheque.Cheque.ToAddr)
-	fmt.Printf("cheque.OpAddr: %s\n", paycheque.Cheque.OpAddr)
-	fmt.Printf("cheque.ContractAddress: %s\n", paycheque.Cheque.ContractAddr)
-	fmt.Printf("paycheque.ChequeSig: %x\n", paycheque.ChequeSig)
-	fmt.Printf("paycheque.PayValue: %s\n", paycheque.PayValue.String())
-	fmt.Printf("paychequeSig: %x\n", paychequeSig)
-
-	_, err = cashInstance.ApplyCheque(auth, paycheque, paychequeSig)
-	if err != nil {
-		fmt.Println("tx failed :", err)
-		return err
-	}
-
-	fmt.Println("-> Now mine a block to complete tx.")
-
-	return nil
-}
 
 // CallDeploy - deploy cash contract
 func CallDeploy() (common.Address, error) {
@@ -146,7 +86,7 @@ func CallDeploy() (common.Address, error) {
 	auth.GasLimit = uint64(7000000) // in units
 	auth.GasPrice = gasPrice
 
-	fmt.Printf("auth success: %v\n", auth)
+	print.Printf100ms("auth success: %v\n", auth)
 
 	contractAddr, _, _, err = cash.DeployCash(auth, client)
 	if err != nil {
@@ -171,6 +111,95 @@ func CallDeploy() (common.Address, error) {
 	}
 	db.Close()
 
-	return contractAddr, nil
+	global.ContractAddress = contractAddr.String()
 
+	return contractAddr, nil
+}
+
+// CallApplyCheque - send tx to contract to call apply cheque method.
+func CallApplyPayCheque(paycheque cash.PayCheque, paychequeSig []byte) error {
+	cli, err := clientops.GetClient(hostops.HOST)
+	if err != nil {
+		fmt.Println("failed to dial geth", err)
+		return err
+	}
+	defer cli.Close()
+
+	auth, err := clientops.MakeAuth(global.StrStorageSK, nil, nil, big.NewInt(1000), 9000000)
+	if err != nil {
+		return err
+	}
+
+	// get contract instance from address
+	cashInstance, err := cash.NewCash(paycheque.Cheque.ContractAddr, cli)
+	if err != nil {
+		fmt.Println("NewCash err: ", err)
+		return err
+	}
+
+	print.Printf100ms("cheque.value: %s\n", paycheque.Cheque.Value)
+	print.Printf100ms("cheque.TokenAddr: %s\n", paycheque.Cheque.TokenAddr)
+	print.Printf100ms("cheque.Nonce: %s\n", paycheque.Cheque.Nonce.String())
+	print.Printf100ms("cheque.FromAddr: %s\n", paycheque.Cheque.FromAddr)
+	print.Printf100ms("cheque.ToAddr: %s\n", paycheque.Cheque.ToAddr)
+	print.Printf100ms("cheque.OpAddr: %s\n", paycheque.Cheque.OpAddr)
+	print.Printf100ms("cheque.ContractAddress: %s\n", paycheque.Cheque.ContractAddr)
+	print.Printf100ms("paycheque.ChequeSig: %x\n", paycheque.ChequeSig)
+	print.Printf100ms("paycheque.PayValue: %s\n", paycheque.PayValue.String())
+	print.Printf100ms("paychequeSig: %x\n", paychequeSig)
+
+	_, err = cashInstance.ApplyCheque(auth, paycheque, paychequeSig)
+	if err != nil {
+		fmt.Println("tx failed :", err)
+		return err
+	}
+
+	fmt.Println("-> Now mine a block to complete tx.")
+
+	return nil
+}
+
+// call get contract node nonce
+func CallGetNodeNonce(node common.Address) error {
+	cli, err := clientops.GetClient(hostops.HOST)
+	if err != nil {
+		fmt.Println("failed to dial geth", err)
+		return err
+	}
+	defer cli.Close()
+
+	// ====== get contractAddr from db
+	// create/open db
+	db, err := leveldb.OpenFile("./operator_data.db", nil)
+	if err != nil {
+		log.Print("opfen db error:", err)
+		return err
+	}
+	// store cash address
+	byteContractAddr, err := db.Get([]byte("contractAddr"), nil)
+	if err != nil {
+		log.Println("db put data error:", err)
+		return err
+	}
+	db.Close()
+
+	AddressContract := common.HexToAddress(string(byteContractAddr))
+	// get contract instance from address
+	cashInstance, err2 := cash.NewCash(AddressContract, cli)
+	if err2 != nil {
+		fmt.Println("NewCash err: ", err2)
+		return err2
+	}
+
+	bigNonce, err := cashInstance.GetNodeNonce(nil, node)
+	if err != nil {
+		fmt.Println("tx failed :", err)
+		return err
+	}
+
+	fmt.Println()
+	fmt.Println("Node: ", node.String())
+	fmt.Println("Node nonce: ", bigNonce.String())
+
+	return nil
 }

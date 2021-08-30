@@ -82,6 +82,9 @@ func main() {
 		// DeployCash
 		case "d":
 			execmd.DeployCash()
+		// Get contract nonce
+		case "gn":
+			execmd.GetContractNonce()
 		// user get cheque from operator
 		case "g":
 			execmd.GetCheque()

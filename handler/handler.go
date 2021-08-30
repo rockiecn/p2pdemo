@@ -29,11 +29,11 @@ func BuyCheckHandler(s network.Stream) error {
 
 	// construct Cheque
 	Cheque := &pb.Cheque{}
-	Cheque.Value = 100                                                  // Cheque 100
-	Cheque.TokenAddress = "b213d01542d129806d664248a380db8b12059061"    // token address
-	Cheque.From = "1ab6a9f2b90004c1269563b5da391250ede3c114"            // user
-	Cheque.To = "b213d01542d129806d664248a380db8b12059061"              // storage
-	Cheque.OperatorAddress = "9e0153496067c20943724b79515472195a7aedaa" // operator
+	Cheque.Value = 100                              // Cheque 100
+	Cheque.TokenAddress = global.StrTokenAddr       // token address
+	Cheque.From = global.StrFromAddr                // user
+	Cheque.To = global.StrToAddr                    // storage
+	Cheque.OperatorAddress = global.StrOperatorAddr // operator
 
 	// create/open db
 	db, err := leveldb.OpenFile("./operator_data.db", nil)
@@ -104,7 +104,7 @@ func BuyCheckHandler(s network.Stream) error {
 	print.Printf100ms("Cheque send, hash: %x\n", hash)
 
 	// sign Cheque by operator
-	var opSkByte = global.OperatorSK
+	var opSkByte = []byte(global.StrOperatorSK)
 
 	sigByte, err := sigapi.Sign(hash, opSkByte)
 	if err != nil {
@@ -228,7 +228,6 @@ func SendCheckHandler(s network.Stream) error {
 	}
 
 	// use PayChequeKey as PayCheque id to store PayChequeMarshaled | paychequeSig
-	//PayChequeMarshWithSig := utils.MergeSlice(sigByte, PayChequeMarshaled)
 	err = db.Put(ChequeKey, in, nil)
 	if err != nil {
 		print.Println100ms("db put data error")

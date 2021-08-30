@@ -21,22 +21,8 @@ import (
 	"github.com/rockiecn/p2pdemo/hostops"
 	"github.com/rockiecn/p2pdemo/pb"
 	"github.com/rockiecn/p2pdemo/print"
+	"github.com/rockiecn/p2pdemo/sigapi"
 )
-
-/*
-// Str2Byte - convert string to []byte
-func Str2Byte(str string) []byte {
-	var ret []byte = []byte(str)
-	return ret
-}
-
-// Byte2Str - convert []byte to strnig
-func Byte2Str(data []byte) string {
-	//var str string = string(data[:len(data)])
-	var str string = string(data[:])
-	return str
-}
-*/
 
 // MergeSlice - merge some slice together
 func MergeSlice(s1 []byte, s2 []byte) []byte {
@@ -172,10 +158,10 @@ func GenChequeKey(Cheque *pb.Cheque) ([]byte, error) {
 	keyByte := MergeSlice(opByte, toByte)
 	keyByte = MergeSlice(keyByte, bigNonce.Bytes())
 	if global.DEBUG {
-		fmt.Printf("in GenChequeKey\n")
-		fmt.Printf("storage addr:%s\n", []byte(Cheque.OperatorAddress))
-		fmt.Printf("nonce:%x\n", bigNonce.Bytes())
-		fmt.Printf("keyByte:%x\n", keyByte)
+		fmt.Printf("<DEBUG> in GenChequeKey\n")
+		fmt.Printf("<DEBUG> storage addr:%s\n", []byte(Cheque.OperatorAddress))
+		fmt.Printf("<DEBUG> nonce:%x\n", bigNonce.Bytes())
+		fmt.Printf("<DEBUG> keyByte:%x\n", keyByte)
 	}
 	return keyByte, nil
 }
@@ -355,7 +341,6 @@ func IncPayValueByKey(key []byte) error {
 		return err
 	}
 
-	PayChequeSig := msg[:65]
 	PayChequeMarshaled := msg[65:]
 
 	// unmarshal it to get Cheque itself
@@ -385,6 +370,19 @@ func IncPayValueByKey(key []byte) error {
 	PayChequeMarshaled, err = proto.Marshal(PayCheque)
 	if err != nil {
 		fmt.Println("marshal paycheque error:", err)
+		return err
+	}
+
+	// recompute paycheque sig
+	hash := CalcPayChequeHash(PayCheque)
+	if global.DEBUG {
+		print.Printf100ms("DEBUG> paycheque hash: %x\n", hash)
+	}
+	// sign PayCheque by user
+	var userSkByte = []byte(global.StrUserSK)
+	PayChequeSig, err := sigapi.Sign(hash, userSkByte)
+	if err != nil {
+		log.Print("sign error")
 		return err
 	}
 
@@ -419,7 +417,6 @@ func IDtoKey(uID uint, user bool) ([]byte, error) {
 	}
 
 	return keyByte, nil
-
 }
 
 // show pay cheque info by key
@@ -451,5 +448,4 @@ func ShowPayChequeInfoByKey(key []byte) error {
 	print.Printf100ms("PayChequeSig: %x\n", PayChequeSig)
 
 	return nil
-
 }

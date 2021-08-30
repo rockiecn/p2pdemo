@@ -8,6 +8,7 @@ import (
 	"github.com/rockiecn/p2pdemo/global"
 	"github.com/rockiecn/p2pdemo/hostops"
 	"github.com/rockiecn/p2pdemo/pb"
+	"github.com/syndtr/goleveldb/leveldb"
 )
 
 func PrintCheque(Cheque *pb.Cheque) {
@@ -54,40 +55,54 @@ func PrintMenu() {
 	if global.RemoteExist {
 		showPeer = global.Peerid.Pretty()
 	} else {
-		//showPeer = "No emote Peer"
-		// string to peer.ID
 		showPeer = "No emote Peer"
-		if err != nil {
-			log.Println(err)
-			return
-		}
 	}
 
-	fmt.Println()
-	fmt.Println()
-	fmt.Println()
-	fmt.Println()
-	fmt.Println("+++++++++++++++++++++")
-	fmt.Printf("| Welcom to p2pdemo |  Remote Peer: %s\n", showPeer)
-	fmt.Println("+++++++++++++++++++++")
-	fmt.Println()
+	db, err := leveldb.OpenFile("./operator_data.db", nil)
+	if err != nil {
+		log.Println("opfen db error")
+		return
+	}
+	defer db.Close()
+	var contractAddrByte []byte
+	contractAddrByte, err = db.Get([]byte("contractAddr"), nil)
+	if err != nil {
+		log.Println("!! get cash address error:", err)
+		return
+	}
 
-	fmt.Println("              ======================= Menu =======================")
-	fmt.Println("               r  -: [ALL]       Record remote peer")
-	fmt.Println("               d  +: [OPERATOR]  Deploy cash contract")
-	fmt.Println("               g  *: [USER]      Get Cheque from operator")
-	fmt.Println("               s  *: [USER]      Send a PayCheque to storage")
-	fmt.Println("               lu -: [USER]      List user's PayCheque table")
-	fmt.Println("               du -: [USER]      Delete a paycheque from user db")
-	fmt.Println("               is *: [USER]      Increase payvalue and send cheque")
-	fmt.Println("               cu -: [USER]      Clear user db")
-	fmt.Println("               sh -: [USER]      Show paycheque info")
-	fmt.Println("               ls -: [STORAGE]   List storage's PayCheque table")
-	fmt.Println("               ds -: [STORAGE]   Delete a paycheque from storage db")
-	fmt.Println("               cc +: [STORAGE]   Call apply cheque")
-	fmt.Println("               cs -: [STORAGE]   Clear storage db")
+	Println100ms("")
+	Println100ms("")
+	Println100ms("")
+	Println100ms("")
+	Println100ms("+++++++++++++++++++++")
+	Println100ms("| Welcom to p2pdemo |")
+	Println100ms("+++++++++++++++++++++")
+	Println100ms("")
+	Printf100ms("Remote Peer: %s\n", showPeer)
+	Printf100ms("Contract Address: %s\n", string(contractAddrByte))
+	Println100ms("")
+	Println100ms("              ======================= Menu =======================")
+	Println100ms("               r  -: [ALL]       Record remote peer")
+	Println100ms("               d  +: [OPERATOR]  Deploy cash contract")
+	Println100ms("               gn +: [OPERATOR]  Get node nonce in contract")
+	Println100ms("               g  *: [USER]      Get Cheque from operator")
+	Println100ms("               s  *: [USER]      Send a PayCheque to storage")
+	Println100ms("               lu -: [USER]      List user's PayCheque table")
+	Println100ms("               du -: [USER]      Delete a paycheque from user db")
+	Println100ms("               is *: [USER]      Increase payvalue and send cheque")
+	Println100ms("               cu -: [USER]      Clear user db")
+	Println100ms("               sh -: [USER]      Show paycheque info")
+	Println100ms("               ls -: [STORAGE]   List storage's PayCheque table")
+	Println100ms("               ds -: [STORAGE]   Delete a paycheque from storage db")
+	Println100ms("               cc +: [STORAGE]   Call apply cheque")
+	Println100ms("               cs -: [STORAGE]   Clear storage db")
 	//fmt.Println("               t  +: [TEST]      Call retrieve in storage")
 	fmt.Println("              ====================================================")
+	Println100ms("")
+	Println100ms("+: Need chain running.")
+	Println100ms("*: Need remote peer, run command 'r'.")
+	Println100ms("")
 
 	fullAddr := hostops.GetHostAddress(hostops.HostInfo)
 	Printf100ms("\nLocal Peer addres: \n[ %s ]\n", fullAddr)
