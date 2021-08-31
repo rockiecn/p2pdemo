@@ -16,6 +16,8 @@ For example, to run command 1:
 Caution: Command 1 must be run first to generate and store a purchase into db, so command 2 can read it.
 3. Run command 4 to deploy a cash contract, and store the contract address to db.(Need mine a block to complete.)
 4. Run command 5 to call contract method, the contract address has been stored in db.(Need mine a block to complete.)
+
+
 ![支票支付流程图](https://user-images.githubusercontent.com/52232908/131478184-8bbf0137-58d0-493d-b287-3c1b936a84ea.png)
 
 
