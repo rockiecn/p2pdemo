@@ -6,42 +6,38 @@ import "./library/Recover.sol";
 
 
 struct Cheque {
-    uint256 value ;
-    address tokenAddr;
-    uint256 nonce;
-	address fromAddr;
-	address toAddr;
-	address opAddr;
-	address contractAddr;
+    uint256 value ;         // value of the cheque, payvalue shoud not exceed value
+    address tokenAddr;      // token address, point out which token to pay
+    uint256 nonce;          // nonce of the cheque, cheque's nonce should not smaller than it.
+	address fromAddr;       // buyer of this cheque, should be cheque's signer
+	address toAddr;         // receiver of cheque's money, point out who to pay
+	address opAddr;         // operator of this cheuqe, shuould be contract's owner
+	address contractAddr;   // should be this contract
 }
 
 struct PayCheque {
 	Cheque cheque;
-	bytes chequeSig;
+	bytes chequeSig;        // signer of this signature should be fromAddr.
 
-	uint256 payValue;
+	uint256 payValue;       // money to pay, should not exceed value.
 }
 
 
 contract Cash  {
 
-    event ShowFrom(address);
-    event ShowNonce(uint256);
-    event ShowChequeHash(bytes32);
-    event ShowPayChequeHash(bytes32);
-    event ShowChequeSigner(address);
-    event ShowChequeSig(bytes);
-    event ShowPayChequeSigner(address);
-    event ShowPayCheckPack(bytes);
+    event Received(address, uint256);
+    event Paid(address, uint256);
     
+    address owner;
     mapping(address => uint256) public nodeNonce;
     
 
+    // constructor
     constructor() payable {
-
+        owner = msg.sender;
     }
     
-    event Received(address, uint);
+    // receiver
     receive() external payable {
         emit Received(msg.sender, msg.value);
     }
@@ -49,14 +45,15 @@ contract Cash  {
     // called by storage
     function apply_cheque(PayCheque memory paycheque, bytes memory paychequeSig) public payable returns(bool) {
       
-        // emit ShowFrom(paycheque.cheque.fromAddr);
-        // emit ShowNonce(paycheque.cheque.nonce);
-        // emit ShowChequeSig(paycheque.chequeSig);
         
         require(paycheque.cheque.nonce >= nodeNonce[paycheque.cheque.toAddr], "cheque.nonce too old");
-        require(paycheque.cheque.toAddr == msg.sender, "sender shuould be cheque.toAddr");
+        require(paycheque.payValue <= paycheque.cheque.value, "payvalue should not exceed value of cheque.");
+        //require(paycheque.cheque.contractAddr == address(this), "contract address error");
+        //require(paycheque.cheque.toAddr == msg.sender, "caller shuould be cheque.toAddr");
+        //require(paycheque.cheque.opAddr == this.owner, "operator should be owner of this contract");
         
-        //bytes memory pack = abi.encodePacked(paycheque.cheque.fromAddr, paycheque.cheque.nodeNonce,"",uint256(0));
+        
+        // used for calc hash
         bytes memory chequePack = 
         abi.encodePacked(
             paycheque.cheque.value,
@@ -70,41 +67,32 @@ contract Cash  {
     	
         bytes memory paychequePack = 
         abi.encodePacked(
-            paycheque.cheque.value,
-            paycheque.cheque.tokenAddr,
-            paycheque.cheque.nonce,
-            paycheque.cheque.fromAddr,
-            paycheque.cheque.toAddr,
-            paycheque.cheque.opAddr,
-            paycheque.cheque.contractAddr,
+            chequePack,
             paycheque.payValue
         );
-    		
-        // emit ShowPayCheckPack(paychequePack);
         
-        // hash =  cheque.from + cheque.nonce 
+
         bytes32 chequeHash = keccak256(chequePack);
         bytes32 paychequeHash = keccak256(paychequePack);
-        // emit ShowChequeHash(chequeHash);
-        // emit ShowPayChequeHash(paychequeHash);
         
+        
+        // get signer from signature
         address chequeSigner = Recover.recover(chequeHash,paycheque.chequeSig);
-        emit ShowChequeSigner(chequeSigner);
-        
         address paychequeSigner = Recover.recover(paychequeHash,paychequeSig);
-        emit ShowPayChequeSigner(paychequeSigner);
         
         require(paycheque.cheque.opAddr == chequeSigner, "illegal cheque sig");
         require(paycheque.cheque.fromAddr == paychequeSigner, "illegal paycheque sig");
         
-        // transfer money to storage node
+        // pay
         uint256 weiPay;
         weiPay = paycheque.payValue * 1000000000000000000; // eth to wei
         payable(paycheque.cheque.toAddr).transfer(weiPay); //pay value to storage
+        emit Paid(paycheque.cheque.toAddr, weiPay);
         
+        
+        // update nonce after paid
         nodeNonce[paycheque.cheque.toAddr] = paycheque.cheque.nonce+1;
         
-        emit ShowNonce(nodeNonce[paycheque.cheque.toAddr]);
         
         return true;
     }
@@ -112,6 +100,11 @@ contract Cash  {
     // get nonce of a specified node
     function get_node_nonce(address node) public view returns(uint256) {
         return nodeNonce[node];
+    }
+    
+    // get owner of the contract
+    function get_owner() public view returns(address) {
+        return owner;
     }
 
 }
