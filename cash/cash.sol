@@ -12,7 +12,7 @@ struct Cheque {
 	address fromAddr;       // buyer of this cheque, should be cheque's signer
 	address toAddr;         // receiver of cheque's money, point out who to pay
 	address opAddr;         // operator of this cheuqe, shuould be contract's owner
-	address contractAddr;   // should be this contract
+	address contractAddr;   // contract address, should be this contract
 }
 
 struct PayCheque {
@@ -48,9 +48,9 @@ contract Cash  {
         
         require(paycheque.cheque.nonce >= nodeNonce[paycheque.cheque.toAddr], "cheque.nonce too old");
         require(paycheque.payValue <= paycheque.cheque.value, "payvalue should not exceed value of cheque.");
-        //require(paycheque.cheque.contractAddr == address(this), "contract address error");
-        //require(paycheque.cheque.toAddr == msg.sender, "caller shuould be cheque.toAddr");
-        //require(paycheque.cheque.opAddr == this.owner, "operator should be owner of this contract");
+        require(paycheque.cheque.contractAddr == address(this), "contract address error");
+        require(paycheque.cheque.toAddr == msg.sender, "caller shuould be cheque.toAddr");
+        require(paycheque.cheque.opAddr == owner, "operator should be owner of this contract");
         
         
         // used for calc hash
@@ -74,8 +74,6 @@ contract Cash  {
 
         bytes32 chequeHash = keccak256(chequePack);
         bytes32 paychequeHash = keccak256(paychequePack);
-        
-        
         // get signer from signature
         address chequeSigner = Recover.recover(chequeHash,paycheque.chequeSig);
         address paychequeSigner = Recover.recover(paychequeHash,paychequeSig);
