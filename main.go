@@ -85,6 +85,8 @@ func main() {
 		// Get contract nonce
 		case "gn":
 			execmd.GetContractNonce()
+		case "re":
+			execmd.ResetNonceInOperatorDB()
 		// user get cheque from operator
 		case "g":
 			execmd.GetCheque()

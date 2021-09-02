@@ -25,6 +25,8 @@ struct PayCheque {
 
 contract Cash  {
 
+    event Flag(uint256);
+
     event Received(address, uint256);
     event Paid(address, uint256);
     
@@ -47,10 +49,15 @@ contract Cash  {
       
         
         require(paycheque.cheque.nonce >= nodeNonce[paycheque.cheque.toAddr], "cheque.nonce too old");
+        emit Flag(1);
         require(paycheque.payValue <= paycheque.cheque.value, "payvalue should not exceed value of cheque.");
+        emit Flag(2);
         require(paycheque.cheque.contractAddr == address(this), "contract address error");
+        emit Flag(3);
         require(paycheque.cheque.toAddr == msg.sender, "caller shuould be cheque.toAddr");
+        emit Flag(4);
         require(paycheque.cheque.opAddr == owner, "operator should be owner of this contract");
+        emit Flag(5);
         
         
         // used for calc hash
@@ -79,7 +86,9 @@ contract Cash  {
         address paychequeSigner = Recover.recover(paychequeHash,paychequeSig);
         
         require(paycheque.cheque.opAddr == chequeSigner, "illegal cheque sig");
+        emit Flag(6);
         require(paycheque.cheque.fromAddr == paychequeSigner, "illegal paycheque sig");
+        emit Flag(7);
         
         // pay
         uint256 weiPay;
@@ -87,10 +96,11 @@ contract Cash  {
         payable(paycheque.cheque.toAddr).transfer(weiPay); //pay value to storage
         emit Paid(paycheque.cheque.toAddr, weiPay);
         
+        emit Flag(8);
         
         // update nonce after paid
         nodeNonce[paycheque.cheque.toAddr] = paycheque.cheque.nonce+1;
-        
+        emit Flag(9);
         
         return true;
     }

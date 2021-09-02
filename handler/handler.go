@@ -47,11 +47,11 @@ func BuyCheckHandler(s network.Stream) error {
 	nonce, err := db.Get([]byte(Cheque.To), nil)
 	if err != nil {
 		if err.Error() == "leveldb: not found" { // no nonce at all
-			db.Put([]byte(Cheque.To), utils.Int64ToBytes(1), nil)
+			db.Put([]byte(Cheque.To), utils.Int64ToBytes(0), nil)
+		} else {
+			fmt.Println("operator db get nonce error: ", err)
+			return err
 		}
-		fmt.Println("operator db get nonce error: ", err)
-		return err
-
 	}
 
 	// increase nonce by 1

@@ -462,3 +462,24 @@ func GetContractNonce() {
 		return
 	}
 }
+
+// set nonce of operator db to 0.
+func ResetNonceInOperatorDB() {
+
+	// create/open db
+	db, err := leveldb.OpenFile("./operator_data.db", nil)
+	if err != nil {
+		log.Fatal("open db error")
+	}
+	defer db.Close()
+
+	byteNonce := utils.Int64ToBytes(0)
+
+	// storage -> nonce
+	err = db.Put([]byte(global.StrToAddr), byteNonce, nil)
+	if err != nil {
+		fmt.Println("reset nonce error: ", err)
+		return
+	}
+
+}

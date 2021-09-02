@@ -32,8 +32,7 @@ func CallDeploy() (common.Address, error) {
 	defer client.Close()
 
 	// get sk
-	//9e0153496067c20943724b79515472195a7aedaa
-	sk, err := crypto.HexToECDSA("cb61e1519b560d994e4361b34c181656d916beb68513cff06c37eb7d258bf93d")
+	sk, err := crypto.HexToECDSA(global.StrOperatorSK)
 	if err != nil {
 		fmt.Println("HexToECDSA err: ", err)
 		return contractAddr, err
@@ -76,7 +75,6 @@ func CallDeploy() (common.Address, error) {
 	bn := new(big.Int)
 	bn, ok1 := bn.SetString("100000000000000000000", 10) // deploy 100 eth
 	//bn, ok1 := bn.SetString("1000000000000000000", 10) // deploy 1 eth
-	//bn, ok1 := bn.SetString("1000", 10) // deploy 100 eth
 	if !ok1 {
 		fmt.Println("SetString: error")
 		fmt.Println("big number SetString error")
