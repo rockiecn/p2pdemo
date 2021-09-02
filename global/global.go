@@ -33,6 +33,6 @@ var StrOperatorSK = "503f38a9c967ed597e47fe25643985f032b072db8075426a92110f82df4
 var StrUserSK = "7e5bfb82febc4c2c8529167104271ceec190eafdca277314912eaabdb67c6e5f"
 var StrStorageSK = "cc6d63f85de8fef05446ebdd3c537c72152d0fc437fd7aa62b3019b79bd1fdd4"
 
-var Increase int64 = 1
+var Increase string = "1000000000000000000"
 
 var ContractAddress string

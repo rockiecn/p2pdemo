@@ -120,7 +120,7 @@ func GetCheque() {
 	PayCheque := &pb.PayCheque{}
 	PayCheque.Cheque = Cheque
 	PayCheque.ChequeSig = sigByte
-	PayCheque.PayValue = 0
+	PayCheque.PayValue = (big.NewInt(0)).String()
 
 	// show generated paycheque
 	if global.DEBUG {
@@ -382,10 +382,25 @@ func StorageCallCash() {
 
 	// cheque
 	var paychequeContract cash.PayCheque
-	bigValue := big.NewInt(PayCheque.Cheque.Value)
+	//bigValue := big.NewInt(PayCheque.Cheque.Value)
+	bigValue := big.NewInt(0)
+	var ok bool
+	bigValue, ok = bigValue.SetString(PayCheque.Cheque.Value, 10)
+	if !ok {
+		print.Println100ms("big.SetString failed")
+		return
+	}
+
 	paychequeContract.Cheque.Value = bigValue
 	paychequeContract.Cheque.TokenAddr = common.HexToAddress(PayCheque.Cheque.TokenAddress)
-	bigNonce := big.NewInt(PayCheque.Cheque.Nonce)
+	//bigNonce := big.NewInt(PayCheque.Cheque.Nonce)
+	bigNonce := big.NewInt(0)
+	bigNonce, ok = bigNonce.SetString(PayCheque.Cheque.Nonce, 10)
+	if !ok {
+		print.Println100ms("big.SetString failed")
+		return
+	}
+
 	paychequeContract.Cheque.Nonce = bigNonce
 	paychequeContract.Cheque.FromAddr = common.HexToAddress(PayCheque.Cheque.From)
 	paychequeContract.Cheque.ToAddr = common.HexToAddress(PayCheque.Cheque.To)
@@ -393,7 +408,14 @@ func StorageCallCash() {
 	paychequeContract.Cheque.ContractAddr = common.HexToAddress(PayCheque.Cheque.ContractAddress)
 	// paycheque
 	paychequeContract.ChequeSig = PayCheque.ChequeSig
-	bigPayValue := big.NewInt(PayCheque.PayValue)
+	//bigPayValue := big.NewInt(PayCheque.PayValue)
+	bigPayValue := big.NewInt(0)
+	bigPayValue, ok = bigPayValue.SetString(PayCheque.PayValue, 10)
+	if !ok {
+		print.Println100ms("big.SetString failed")
+		return
+	}
+
 	paychequeContract.PayValue = bigPayValue
 
 	print.Println100ms("------------- show paycheque contract ---------------")
@@ -473,13 +495,35 @@ func ResetNonceInOperatorDB() {
 	}
 	defer db.Close()
 
-	byteNonce := utils.Int64ToBytes(0)
+	//byteNonce := utils.Int64ToBytes(0)
+	bigNonce := big.NewInt(0)
 
 	// storage -> nonce
-	err = db.Put([]byte(global.StrToAddr), byteNonce, nil)
+	err = db.Put([]byte(global.StrToAddr), bigNonce.Bytes(), nil)
 	if err != nil {
 		fmt.Println("reset nonce error: ", err)
 		return
 	}
+}
 
+func ShowNonceInOperatorDB() {
+
+	// create/open db
+	db, err := leveldb.OpenFile("./operator_data.db", nil)
+	if err != nil {
+		log.Fatal("open db error")
+	}
+	defer db.Close()
+
+	//byteNonce := utils.Int64ToBytes(0)
+	bigNonce := big.NewInt(0)
+
+	// storage -> nonce
+	byteNonce, err := db.Get([]byte(global.StrToAddr), nil)
+	if err != nil {
+		fmt.Println("get nonce error: ", err)
+		return
+	}
+	bigNonce.SetBytes(byteNonce)
+	fmt.Println("nonce:", bigNonce.String())
 }

@@ -13,8 +13,8 @@ import (
 
 func PrintCheque(Cheque *pb.Cheque) {
 	Println100ms("------------------ Print Cheque ------------------")
-	Printf100ms("->Cheque.Value: %d\n", Cheque.Value)
-	Printf100ms("->Cheque.Nonce: %d\n", Cheque.Nonce)
+	Printf100ms("->Cheque.Value: %s\n", Cheque.Value)
+	Printf100ms("->Cheque.Nonce: %s\n", Cheque.Nonce)
 	Printf100ms("->Cheque.OperatorAddress: %s\n", Cheque.OperatorAddress)
 	Printf100ms("->Cheque.From: %s\n", Cheque.From)
 	Printf100ms("->Cheque.TokenAddress: %s\n", Cheque.TokenAddress)
@@ -23,28 +23,28 @@ func PrintCheque(Cheque *pb.Cheque) {
 
 func PrintPayCheque(PayCheque *pb.PayCheque) {
 	Println100ms("-------------------- Print PayCheque ------------------")
-	Printf100ms("->Cheque.Value: %d\n", PayCheque.Cheque.Value)
+	Printf100ms("->Cheque.Value: %s\n", PayCheque.Cheque.Value)
 	Printf100ms("->Cheque.TokenAddress: %s\n", PayCheque.Cheque.TokenAddress)
-	Printf100ms("->Cheque.NodeNonce: %d\n", PayCheque.Cheque.Nonce)
+	Printf100ms("->Cheque.NodeNonce: %s\n", PayCheque.Cheque.Nonce)
 	Printf100ms("->Cheque.From: %s\n", PayCheque.Cheque.From)
 	Printf100ms("->Cheque.To: %s\n", PayCheque.Cheque.To)
 	Printf100ms("->Cheque.OperatorAddress: %s\n", PayCheque.Cheque.OperatorAddress)
 	Printf100ms("->PayCheque.CashAddress: %s\n", PayCheque.Cheque.ContractAddress)
 	Printf100ms("->PayCheque.ChequeSig: %x\n", PayCheque.ChequeSig)
-	Printf100ms("->PayCheque.PayValue: %d\n", PayCheque.PayValue)
+	Printf100ms("->PayCheque.PayValue: %s\n", PayCheque.PayValue)
 	Println100ms("----------------------------------------------------")
 }
 
 // println with 100 ms delay
 func Println100ms(str string) {
 	fmt.Println(str)
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(5 * time.Millisecond)
 }
 
 // printf with 100 ms delay
 func Printf100ms(format string, a ...interface{}) {
 	fmt.Printf(format, a...)
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(5 * time.Millisecond)
 }
 
 // print command menu
@@ -83,10 +83,12 @@ func PrintMenu() {
 	Printf100ms("Contract Address: %s\n", string(contractAddrByte))
 	Println100ms("")
 	Println100ms("              ======================= Menu =======================")
+	Println100ms("               m   : [ALL]       Show menu")
 	Println100ms("               r   : [ALL]       Record remote peer")
 	Println100ms("               d  +: [OPERATOR]  Deploy cash contract")
 	Println100ms("               gn +: [OPERATOR]  Get node nonce in contract")
 	Println100ms("               re  : [OPERATOR]  Reset nonce in db")
+	Println100ms("               sn  : [OPERATOR]  Show nonce in db")
 	Println100ms("               g  *: [USER]      Get Cheque from operator")
 	Println100ms("               s  *: [USER]      Send a PayCheque to storage")
 	Println100ms("               lu  : [USER]      List user's PayCheque table")

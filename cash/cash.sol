@@ -6,9 +6,9 @@ import "./library/Recover.sol";
 
 
 struct Cheque {
-	uint256 value;         // value of the cheque, payvalue shoud not exceed value
-	address tokenAddr;      // token address, point out which token to pay
-	uint256 nonce;          // nonce of the cheque, cheque's nonce should not smaller than it.
+    uint256 value ;         // value of the cheque, payvalue shoud not exceed value
+    address tokenAddr;      // token address, point out which token to pay
+    uint256 nonce;          // nonce of the cheque, cheque's nonce should not smaller than it.
 	address fromAddr;       // buyer of this cheque, should be cheque's signer
 	address toAddr;         // receiver of cheque's money, point out who to pay
 	address opAddr;         // operator of this cheuqe, shuould be contract's owner
@@ -25,8 +25,9 @@ struct PayCheque {
 
 contract Cash  {
 
-    event Flag(uint256);
-
+    event Show(uint256);
+    event Showbytes(bytes);
+    
     event Received(address, uint256);
     event Paid(address, uint256);
     
@@ -46,21 +47,24 @@ contract Cash  {
 
     // called by storage
     function apply_cheque(PayCheque memory paycheque, bytes memory paychequeSig) public payable returns(bool) {
-      
         
         require(paycheque.cheque.nonce >= nodeNonce[paycheque.cheque.toAddr], "cheque.nonce too old");
-        emit Flag(1);
         require(paycheque.payValue <= paycheque.cheque.value, "payvalue should not exceed value of cheque.");
-        emit Flag(2);
-        require(paycheque.cheque.contractAddr == address(this), "contract address error");
-        emit Flag(3);
+        //require(paycheque.cheque.contractAddr == address(this), "contract address error");
         require(paycheque.cheque.toAddr == msg.sender, "caller shuould be cheque.toAddr");
-        emit Flag(4);
         require(paycheque.cheque.opAddr == owner, "operator should be owner of this contract");
-        emit Flag(5);
         
+        int256 x = -1;
+        uint256 max_num = uint256(x);
+        bytes memory z = toBytes1(max_num);
+        emit Show(max_num);
+        emit Showbytes(z);
         
-        // used for calc hash
+        // nonce max
+        require(paycheque.cheque.nonce < max_num);
+        
+
+        // verify cheque's signer
         bytes memory chequePack = 
         abi.encodePacked(
             paycheque.cheque.value,
@@ -71,36 +75,26 @@ contract Cash  {
             paycheque.cheque.opAddr,
             paycheque.cheque.contractAddr
     		);
+        bytes32 chequeHash = keccak256(chequePack);
+        address chequeSigner = Recover.recover(chequeHash,paycheque.chequeSig);
+        require(paycheque.cheque.opAddr == chequeSigner, "illegal cheque sig");
     	
+        // verify paycheque's signer
         bytes memory paychequePack = 
         abi.encodePacked(
             chequePack,
             paycheque.payValue
         );
-        
-
-        bytes32 chequeHash = keccak256(chequePack);
         bytes32 paychequeHash = keccak256(paychequePack);
-        // get signer from signature
-        address chequeSigner = Recover.recover(chequeHash,paycheque.chequeSig);
         address paychequeSigner = Recover.recover(paychequeHash,paychequeSig);
-        
-        require(paycheque.cheque.opAddr == chequeSigner, "illegal cheque sig");
-        emit Flag(6);
         require(paycheque.cheque.fromAddr == paychequeSigner, "illegal paycheque sig");
-        emit Flag(7);
         
         // pay
-        uint256 weiPay;
-        weiPay = paycheque.payValue * 1000000000000000000; // eth to wei
-        payable(paycheque.cheque.toAddr).transfer(weiPay); //pay value to storage
-        emit Paid(paycheque.cheque.toAddr, weiPay);
-        
-        emit Flag(8);
+        payable(paycheque.cheque.toAddr).transfer(paycheque.payValue); //pay value to storage
+        emit Paid(paycheque.cheque.toAddr, paycheque.payValue);
         
         // update nonce after paid
-        nodeNonce[paycheque.cheque.toAddr] = paycheque.cheque.nonce+1;
-        emit Flag(9);
+        nodeNonce[paycheque.cheque.toAddr] = paycheque.cheque.nonce + 1;
         
         return true;
     }
@@ -113,6 +107,13 @@ contract Cash  {
     // get owner of the contract
     function get_owner() public view returns(address) {
         return owner;
+    }
+    
+    
+    // 
+    function toBytes1(uint256 x) public pure returns (bytes memory b) {
+        b = new bytes(32);
+        assembly { mstore(add(b, 32), x) }
     }
 
 }

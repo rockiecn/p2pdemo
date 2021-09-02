@@ -89,11 +89,28 @@ func CalcChequeHash(Cheque *pb.Cheque) []byte {
 	// 	log.Fatalln("Failed to parse check:", err)
 	// }
 
+	fmt.Println("cheque.value:", Cheque.Value)
 	// calc hash 32 bytes
-	bigValue := big.NewInt(Cheque.Value)
+	//bigValue := big.NewInt(Cheque.Value)
+	bigValue := big.NewInt(0)
+	var ok bool
+	bigValue, ok = bigValue.SetString(Cheque.Value, 10)
+	if !ok {
+		print.Println100ms("big.SetString failed")
+		return nil
+	}
+
+	if global.DEBUG {
+		fmt.Println("in calcchequehash")
+		fmt.Println("bigvalue:", bigValue.String())
+	}
+
 	valuePad32 := common.LeftPadBytes(bigValue.Bytes(), 32)
 
-	bigNonce := big.NewInt(Cheque.Nonce)
+	//bigNonce := big.NewInt(Cheque.Nonce)
+	bigNonce := big.NewInt(0)
+	bigNonce.SetString(Cheque.Nonce, 10)
+
 	noncePad32 := common.LeftPadBytes(bigNonce.Bytes(), 32)
 
 	tokenBytes, _ := hex.DecodeString(Cheque.TokenAddress)
@@ -118,13 +135,31 @@ func CalcChequeHash(Cheque *pb.Cheque) []byte {
 func CalcPayChequeHash(PayCheque *pb.PayCheque) []byte {
 
 	// calc hash 32 bytes
-	bigValue := big.NewInt(PayCheque.Cheque.Value)
+	//bigValue := big.NewInt(PayCheque.Cheque.Value)
+	bigValue := big.NewInt(0)
+	var ok bool
+	bigValue, ok = bigValue.SetString(PayCheque.Cheque.Value, 10)
+	if !ok {
+		print.Println100ms("big.SetString failed")
+		return nil
+	}
+
 	valuePad32 := common.LeftPadBytes(bigValue.Bytes(), 32)
 
-	bigNonce := big.NewInt(PayCheque.Cheque.Nonce)
+	//bigNonce := big.NewInt(PayCheque.Cheque.Nonce)
+	bigNonce := big.NewInt(0)
+	bigNonce.SetString(PayCheque.Cheque.Nonce, 10)
+
 	noncePad32 := common.LeftPadBytes(bigNonce.Bytes(), 32)
 
-	bigPayValue := big.NewInt(PayCheque.PayValue)
+	//bigPayValue := big.NewInt(PayCheque.PayValue)
+	bigPayValue := big.NewInt(0)
+	bigPayValue, ok = bigPayValue.SetString(PayCheque.PayValue, 10)
+	if !ok {
+		print.Println100ms("big.SetString failed")
+		return nil
+	}
+
 	payvaluePad32 := common.LeftPadBytes(bigPayValue.Bytes(), 32)
 
 	tokenBytes, _ := hex.DecodeString(PayCheque.Cheque.TokenAddress)
@@ -150,7 +185,9 @@ func CalcPayChequeHash(PayCheque *pb.PayCheque) []byte {
 //func GenChequeKey(addr string, nonce *big.Int) ([]byte, error) {
 func GenChequeKey(Cheque *pb.Cheque) ([]byte, error) {
 
-	bigNonce := big.NewInt(Cheque.Nonce)
+	//bigNonce := big.NewInt(Cheque.Nonce)
+	bigNonce := big.NewInt(0)
+	bigNonce.SetString(Cheque.Nonce, 10)
 
 	opByte := []byte(Cheque.OperatorAddress)
 	toByte := []byte(Cheque.To)
@@ -260,18 +297,19 @@ func ListPayCheque(user bool) {
 
 		// transmit to string
 		strID := strconv.Itoa(id)
-		strValue := strconv.FormatInt(PayCheque.Cheque.Value, 10)
-		strPayValue := strconv.FormatInt(PayCheque.PayValue, 10)
-		strNonce := strconv.FormatInt(PayCheque.Cheque.Nonce, 10)
+		//strValue := strconv.FormatInt(PayCheque.Cheque.Value, 10)
+		//strPayValue := strconv.FormatInt(PayCheque.PayValue, 10)
+
+		//strNonce := strconv.FormatInt(PayCheque.Cheque.Nonce, 10)
 
 		//
 		value := map[string]string{
 			"ID":       strID,
 			"FROM":     PayCheque.Cheque.From,
 			"TO":       PayCheque.Cheque.To,
-			"VALUE":    strValue,
-			"PAYVALUE": strPayValue,
-			"NONCE":    strNonce,
+			"VALUE":    PayCheque.Cheque.Value,
+			"PAYVALUE": PayCheque.PayValue,
+			"NONCE":    PayCheque.Cheque.Nonce,
 		}
 		err = table.AddRow(value)
 		if err != nil {
@@ -355,13 +393,43 @@ func IncPayValueByKey(key []byte) error {
 	}
 
 	// not enough cash
-	if PayCheque.Cheque.Value < PayCheque.PayValue+global.Increase {
+	bigValue := big.NewInt(0)
+	bigPayvalue := big.NewInt(0)
+	bigInc := big.NewInt(0)
+	var ok bool
+	bigValue, ok = bigValue.SetString(PayCheque.Cheque.Value, 10)
+	if !ok {
+		print.Println100ms("big.SetString failed")
+		return errors.New("big.SetString failed")
+	}
+
+	bigPayvalue, ok = bigPayvalue.SetString(PayCheque.PayValue, 10)
+	if !ok {
+		print.Println100ms("big.SetString failed")
+		return errors.New("big.SetString failed")
+	}
+
+	bigInc, ok = bigInc.SetString(global.Increase, 10)
+	if !ok {
+		print.Println100ms("big.SetString failed")
+		return errors.New("big.SetString failed")
+	}
+
+	bigAdd := bigPayvalue.Add(bigPayvalue, bigInc)
+
+	// if PayCheque.Cheque.Value < PayCheque.PayValue+global.Increase {
+	// 	fmt.Println("Cheque not enough cash.")
+	// 	return errors.New("cheque not enough cash")
+	// }
+	if bigValue.Cmp(bigAdd) == -1 {
 		fmt.Println("Cheque not enough cash.")
 		return errors.New("cheque not enough cash")
 	}
 
 	// increase pay value
-	PayCheque.PayValue = PayCheque.PayValue + global.Increase
+	//PayCheque.PayValue = PayCheque.PayValue + global.Increase
+	PayCheque.PayValue = bigAdd.String()
+
 	if global.DEBUG {
 		print.Printf100ms("-> Pay cheque after increased:%d\n", PayCheque.PayValue)
 	}

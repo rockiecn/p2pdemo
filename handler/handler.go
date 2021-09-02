@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/libp2p/go-libp2p-core/network"
@@ -29,7 +30,7 @@ func BuyCheckHandler(s network.Stream) error {
 
 	// construct Cheque
 	Cheque := &pb.Cheque{}
-	Cheque.Value = 100                              // Cheque 100
+	Cheque.Value = "100000000000000000000"          // Cheque 100
 	Cheque.TokenAddress = global.StrTokenAddr       // token address
 	Cheque.From = global.StrFromAddr                // user
 	Cheque.To = global.StrToAddr                    // storage
@@ -42,7 +43,7 @@ func BuyCheckHandler(s network.Stream) error {
 	}
 	defer db.Close()
 
-	var newNonce int64 = 0
+	//var newNonce int64 = 0
 	// storage -> nonce
 	nonce, err := db.Get([]byte(Cheque.To), nil)
 	if err != nil {
@@ -56,21 +57,33 @@ func BuyCheckHandler(s network.Stream) error {
 
 	// increase nonce by 1
 	// byte to string
-	oldNonce := utils.BytesToInt64(nonce)
-	fmt.Println("oldNonce: ", oldNonce)
-	newNonce = oldNonce + 1
+	bigNewNonce := big.NewInt(0)
+	bigOne := big.NewInt(1)
+	//oldNonce := utils.BytesToInt64(nonce)
+	bigOldNonce := big.NewInt(0)
+	bigOldNonce = bigOldNonce.SetBytes(nonce)
+	fmt.Println("bigOldNonce: ", bigOldNonce.String())
+	bigNewNonce = bigOldNonce.Add(bigOldNonce, bigOne)
+	fmt.Println("bigNewNonce: ", bigNewNonce.String())
+
 	// put new nonce into db
-	byteN := utils.Int64ToBytes(newNonce)
-	fmt.Println("newNonce: ", newNonce)
-	fmt.Printf("byteN: %v\n", byteN)
-	err = db.Put([]byte(Cheque.To), byteN, nil)
+	//byteN := utils.Int64ToBytes(newNonce)
+	//fmt.Println("newNonce: ", newNonce)
+	//fmt.Printf("byteN: %v\n", byteN)
+	// err = db.Put([]byte(Cheque.To), byteN, nil)
+	// if err != nil {
+	// 	fmt.Println("operator db put nonce error")
+	// 	return err
+	// }
+
+	err = db.Put([]byte(Cheque.To), bigNewNonce.Bytes(), nil)
 	if err != nil {
 		fmt.Println("operator db put nonce error")
 		return err
 	}
 
 	//
-	Cheque.Nonce = newNonce
+	Cheque.Nonce = bigNewNonce.String()
 
 	contractAddrByte, err := db.Get([]byte("contractAddr"), nil)
 	if err != nil {

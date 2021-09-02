@@ -4,9 +4,9 @@ package pb;
 option go_package = "../pb";
 
 message Cheque {
-	int64 value = 1;
+	string value = 1;
 	string token_address = 2;	// token
-	int64 nonce = 3;
+	string nonce = 3;
 	string from = 4;	// user
 	string to =5;	// storage
 	string operator_address = 6; // operator
@@ -17,7 +17,7 @@ message PayCheque {
 	Cheque cheque = 1;
 	bytes cheque_sig = 2; //运营商对cheque的签名
 
-	int64 pay_value = 3; //支付给存储节点的数额必须小于等于cheque.max_amount
+	string pay_value = 3; //支付给存储节点的数额必须小于等于cheque.max_amount
 }
 
 message PayChequeBatch {

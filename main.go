@@ -60,22 +60,25 @@ func main() {
 	//fullAddr := hostops.GetHostAddress(hostops.HostInfo)
 	//fmt.Printf("\nLocal peer address: \n[ %s ]\n", fullAddr)
 
+	// menu
+	print.PrintMenu()
+
 	// run commandline
 	for {
-		// menu
-		print.PrintMenu()
 
 		var strCmd string
 		print.Println100ms("\n> Intput command: ")
 		fmt.Scanf("%s", &strCmd)
 		if strCmd == "" {
-			print.Printf100ms("invalid input.\n")
 			continue
 		}
 
 		// execute command with cmd id
 		//exeCommand(Ctx, hostops.HostInfo, strTarget, strCmd)
 		switch strCmd {
+		// show menu
+		case "m":
+			print.PrintMenu()
 		// recoredRemote
 		case "r":
 			recoredRemote()
@@ -87,6 +90,8 @@ func main() {
 			execmd.GetContractNonce()
 		case "re":
 			execmd.ResetNonceInOperatorDB()
+		case "sn":
+			execmd.ShowNonceInOperatorDB()
 		// user get cheque from operator
 		case "g":
 			execmd.GetCheque()
@@ -120,6 +125,8 @@ func main() {
 			execmd.ClearDB(false)
 		case "sh":
 			execmd.ShowPayChequeByID()
+		default:
+			print.Printf100ms("invalid input.\n")
 		}
 	}
 }
