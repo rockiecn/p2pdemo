@@ -6,9 +6,9 @@ import "./library/Recover.sol";
 
 
 struct Cheque {
-    uint256 value ;         // value of the cheque, payvalue shoud not exceed value
-    address tokenAddr;      // token address, point out which token to pay
-    uint256 nonce;          // nonce of the cheque, cheque's nonce should not smaller than it.
+	uint256 value;         // value of the cheque, payvalue shoud not exceed value
+	address tokenAddr;      // token address, point out which token to pay
+	uint256 nonce;          // nonce of the cheque, cheque's nonce should not smaller than it.
 	address fromAddr;       // buyer of this cheque, should be cheque's signer
 	address toAddr;         // receiver of cheque's money, point out who to pay
 	address opAddr;         // operator of this cheuqe, shuould be contract's owner
