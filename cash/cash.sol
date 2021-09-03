@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 
 import "./library/Recover.sol";
+import "./library/SafeMath.sol";
 
 
 struct Cheque {
@@ -24,6 +25,7 @@ struct PayCheque {
 
 
 contract Cash  {
+    using SafeMath for uint256;
 
     event Show(uint256);
     event Showbytes(bytes);
@@ -50,7 +52,7 @@ contract Cash  {
         
         require(paycheque.cheque.nonce >= nodeNonce[paycheque.cheque.toAddr], "cheque.nonce too old");
         require(paycheque.payValue <= paycheque.cheque.value, "payvalue should not exceed value of cheque.");
-        //require(paycheque.cheque.contractAddr == address(this), "contract address error");
+        require(paycheque.cheque.contractAddr == address(this), "contract address error");
         require(paycheque.cheque.toAddr == msg.sender, "caller shuould be cheque.toAddr");
         require(paycheque.cheque.opAddr == owner, "operator should be owner of this contract");
         
@@ -61,7 +63,7 @@ contract Cash  {
         emit Showbytes(z);
         
         // nonce max
-        require(paycheque.cheque.nonce < max_num);
+        require(paycheque.cheque.nonce < max_num, "nonce must less than max");
         
 
         // verify cheque's signer
@@ -94,7 +96,9 @@ contract Cash  {
         emit Paid(paycheque.cheque.toAddr, paycheque.payValue);
         
         // update nonce after paid
-        nodeNonce[paycheque.cheque.toAddr] = paycheque.cheque.nonce + 1;
+        //nodeNonce[paycheque.cheque.toAddr] = paycheque.cheque.nonce + 1;
+        nodeNonce[paycheque.cheque.toAddr] = paycheque.cheque.nonce.add(1);
+        
         
         return true;
     }
