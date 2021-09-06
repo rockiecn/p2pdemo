@@ -2,7 +2,6 @@ package print
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/rockiecn/p2pdemo/global"
@@ -50,6 +49,7 @@ func Printf100ms(format string, a ...interface{}) {
 // print command menu
 func PrintMenu() {
 
+	var contractAddress string
 	var showPeer string
 	var err error
 	if global.RemoteExist {
@@ -60,15 +60,16 @@ func PrintMenu() {
 
 	db, err := leveldb.OpenFile("./operator_data.db", nil)
 	if err != nil {
-		log.Println("opfen db error")
-		return
+		fmt.Println("Open db error")
 	}
 	defer db.Close()
 	var contractAddrByte []byte
 	contractAddrByte, err = db.Get([]byte("contractAddr"), nil)
 	if err != nil {
-		log.Println("!! get cash address error:", err)
-		return
+		fmt.Println("Get cash address error:", err)
+		contractAddress = "none"
+	} else {
+		contractAddress = string(contractAddrByte)
 	}
 
 	Println100ms("")
@@ -80,7 +81,7 @@ func PrintMenu() {
 	Println100ms("+++++++++++++++++++++")
 	Println100ms("")
 	Printf100ms("Remote Peer: %s\n", showPeer)
-	Printf100ms("Contract Address: %s\n", string(contractAddrByte))
+	Printf100ms("Contract Address: %s\n", contractAddress)
 	Println100ms("")
 	Println100ms("              ======================= Menu =======================")
 	Println100ms("               m   : [ALL]       Show menu")

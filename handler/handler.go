@@ -247,9 +247,8 @@ func SendCheckHandler(s network.Stream) error {
 		return err
 	}
 
-	db.Close()
-
-	utils.ListPayCheque(false)
+	defer utils.ListPayCheque(false)
+	defer db.Close()
 
 	print.PrintMenu()
 	print.Println100ms("\n> Intput target address and cmd: ")

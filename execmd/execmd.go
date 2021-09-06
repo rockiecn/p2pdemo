@@ -98,12 +98,6 @@ func GetCheque() {
 
 	fmt.Println("<signature of Cheque verify success>")
 
-	// create/open db
-	db, err := leveldb.OpenFile("./paycheque.db", nil)
-	if err != nil {
-		log.Fatal("opfen db error")
-	}
-
 	// Cheque key: To + nonce
 	ChequeKey, err := utils.GenChequeKey(Cheque)
 	if err != nil {
@@ -125,9 +119,9 @@ func GetCheque() {
 	// show generated paycheque
 	if global.DEBUG {
 		print.Println100ms("---------- show generated paycheque -----------")
-		print.Printf100ms("Value: %d\n", Cheque.Value)
+		print.Printf100ms("Value: %s\n", Cheque.Value)
 		print.Printf100ms("TokenAddress: %s\n", Cheque.TokenAddress)
-		print.Printf100ms("Nonce: %d\n", Cheque.Nonce)
+		print.Printf100ms("Nonce: %s\n", Cheque.Nonce)
 		print.Printf100ms("From: %s\n", Cheque.From)
 		print.Printf100ms("To: %s\n", Cheque.To)
 		print.Printf100ms("OperatorAddress: %s\n", Cheque.OperatorAddress)
@@ -166,6 +160,11 @@ func GetCheque() {
 	msg := utils.MergeSlice(PayChequeSig, PayChequeMarshaled)
 
 	//////////////////
+	// create/open db
+	db, err := leveldb.OpenFile("./paycheque.db", nil)
+	if err != nil {
+		fmt.Println("open db error", err)
+	}
 
 	// db: paycheque_sig | paycheque_marshaled
 	err = db.Put(ChequeKey, msg, nil)
@@ -174,11 +173,10 @@ func GetCheque() {
 		return
 	}
 
-	//
-	db.Close()
-
 	// show table
-	utils.ListPayCheque(true)
+	defer utils.ListPayCheque(true)
+	defer db.Close()
+
 }
 
 // user send marshaled PayCheques to storage
@@ -230,6 +228,7 @@ func DeleteChequeByID(user bool) {
 	if err != nil {
 		log.Fatal("opfen db error")
 	}
+
 	print.Println100ms("Input ID to delete:")
 	var uID uint
 	fmt.Scanf("%d", &uID)
@@ -254,9 +253,9 @@ func DeleteChequeByID(user bool) {
 	}
 	print.Printf100ms("delete ID %d success.\n", uID)
 
-	db.Close()
+	defer utils.ListPayCheque(user)
+	defer db.Close()
 
-	utils.ListPayCheque(user)
 }
 
 //
@@ -458,6 +457,7 @@ func ClearDB(user bool) {
 		fmt.Println("", err)
 		return
 	}
+	defer db.Close()
 
 	iter := db.NewIterator(nil, nil)
 	for iter.Next() {
@@ -469,7 +469,6 @@ func ClearDB(user bool) {
 		fmt.Println("", err)
 		return
 	}
-	defer db.Close()
 }
 
 // get contract nonce

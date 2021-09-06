@@ -101,13 +101,13 @@ func CallDeploy() (common.Address, error) {
 		log.Print("opfen db error:", err)
 		return contractAddr, err
 	}
+	defer db.Close()
 	// store cash address
 	err = db.Put([]byte("contractAddr"), []byte(contractAddr.String()), nil)
 	if err != nil {
 		log.Println("db put data error:", err)
 		return contractAddr, err
 	}
-	db.Close()
 
 	global.ContractAddress = contractAddr.String()
 
@@ -170,16 +170,16 @@ func CallGetNodeNonce(node common.Address) error {
 	// create/open db
 	db, err := leveldb.OpenFile("./operator_data.db", nil)
 	if err != nil {
-		log.Print("opfen db error:", err)
+		fmt.Print("open db error:", err)
 		return err
 	}
+	defer db.Close()
 	// store cash address
 	byteContractAddr, err := db.Get([]byte("contractAddr"), nil)
 	if err != nil {
-		log.Println("db put data error:", err)
+		fmt.Println("db get data error:", err)
 		return err
 	}
-	db.Close()
 
 	AddressContract := common.HexToAddress(string(byteContractAddr))
 	// get contract instance from address

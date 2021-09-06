@@ -221,7 +221,7 @@ func UpdatePayChequeIndex(user bool) {
 	// create/open db
 	db, err := leveldb.OpenFile(dbfile, nil)
 	if err != nil {
-		log.Fatal("opfen db error")
+		fmt.Println("open db error", err)
 	}
 	defer db.Close()
 
@@ -259,7 +259,7 @@ func ListPayCheque(user bool) {
 	// create/open db
 	db, err := leveldb.OpenFile(dbfile, nil)
 	if err != nil {
-		log.Fatal("opfen db error")
+		fmt.Println("open db error", err)
 	}
 	defer db.Close()
 
