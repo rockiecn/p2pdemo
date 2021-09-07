@@ -1,27 +1,17 @@
 package utils
 
 import (
-	"context"
 	"encoding/binary"
 	"encoding/hex"
-	"errors"
 	"fmt"
-	"log"
 	"math/big"
-	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 
-	"github.com/liushuochen/gotable"
-	"github.com/syndtr/goleveldb/leveldb"
-	"google.golang.org/protobuf/proto"
-
 	"github.com/rockiecn/p2pdemo/global"
-	"github.com/rockiecn/p2pdemo/hostops"
 	"github.com/rockiecn/p2pdemo/pb"
 	"github.com/rockiecn/p2pdemo/print"
-	"github.com/rockiecn/p2pdemo/sigapi"
 )
 
 // MergeSlice - merge some slice together
@@ -203,6 +193,7 @@ func GenChequeKey(Cheque *pb.Cheque) ([]byte, error) {
 	return keyByte, nil
 }
 
+/*
 // Update Index
 func UpdatePayChequeIndex(user bool) {
 	var dbfile string
@@ -517,3 +508,4 @@ func ShowPayChequeInfoByKey(key []byte) error {
 
 	return nil
 }
+*/

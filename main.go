@@ -16,15 +16,14 @@ import (
 	golog "github.com/ipfs/go-log/v2"
 	ma "github.com/multiformats/go-multiaddr"
 
-	"github.com/rockiecn/p2pdemo/execmd"
+	"github.com/rockiecn/p2pdemo/app"
 	"github.com/rockiecn/p2pdemo/global"
-	"github.com/rockiecn/p2pdemo/handler"
 	"github.com/rockiecn/p2pdemo/hostops"
 	"github.com/rockiecn/p2pdemo/print"
 )
 
-// run listener
-func init() {
+//
+func main() {
 	var Cancel context.CancelFunc
 	global.Ctx, Cancel = context.WithCancel(context.Background())
 	defer Cancel()
@@ -47,18 +46,18 @@ func init() {
 		log.Fatal(err)
 	}
 
+	//
+	app := &app.App{}
+	app.Init()
+
 	// run listener
 	listenerDone := make(chan int)
-	go runListener(global.Ctx, hostops.HostInfo, port, listenerDone)
+	go runListener(app, global.Ctx, hostops.HostInfo, port, listenerDone)
 	<-listenerDone //wait until runlistener complete
-}
 
-//
-func main() {
-
-	// local peer
-	//fullAddr := hostops.GetHostAddress(hostops.HostInfo)
-	//fmt.Printf("\nLocal peer address: \n[ %s ]\n", fullAddr)
+	defer app.Op.CloseDB()
+	defer app.User.CloseDB()
+	defer app.Pro.CloseDB()
 
 	// menu
 	print.PrintMenu()
@@ -67,11 +66,14 @@ func main() {
 	for {
 
 		var strCmd string
+
 		print.Println100ms("\n> Intput command: ")
 		fmt.Scanf("%s", &strCmd)
 		if strCmd == "" {
 			continue
 		}
+
+		var err error
 
 		// execute command with cmd id
 		//exeCommand(Ctx, hostops.HostInfo, strTarget, strCmd)
@@ -84,60 +86,106 @@ func main() {
 			recoredRemote()
 		// DeployCash
 		case "d":
-			execmd.DeployCash()
+			_, err = app.Op.DeployContract()
+			if err != nil {
+				fmt.Println("operator deploy contract error:", err)
+			}
 		// Get contract nonce
 		case "gn":
-			execmd.GetContractNonce()
+			_, err = app.Op.GetContractNonce()
+			if err != nil {
+				fmt.Println("operator get contract error:", err)
+			}
 		case "re":
-			execmd.ResetNonceInOperatorDB()
+			//execmd.ResetNonceInOperatorDB()
+			err = app.Op.ResetNonceInDB()
+			if err != nil {
+				fmt.Println("operator reset nonce error:", err)
+			}
 		case "sn":
-			execmd.ShowNonceInOperatorDB()
+			err = app.Op.ShowNonceInDB()
+			if err != nil {
+				fmt.Println("operator show nonce error:", err)
+			}
 		// user get cheque from operator
 		case "g":
-			execmd.GetCheque()
+			_, err = app.User.BuyCheque()
+			if err != nil {
+				fmt.Println("user buy cheque error:", err)
+			}
 		// Send One PayCheque to storage
 		case "s":
-			execmd.SendOnePayChequeByID()
+			err = app.User.SendOnePayChequeByID()
+			if err != nil {
+				fmt.Println("user send paycheque error:", err)
+			}
 		// list user's cheque db
 		case "lu":
-			execmd.ListDB(true)
+			err = app.User.ListPayCheque()
+			if err != nil {
+				fmt.Println("user list paycheque error:", err)
+			}
 		// delete a cheque of user
 		case "du":
-			execmd.DeleteChequeByID(true)
+			app.User.DeleteChequeByID()
 		// Inc And Send a Cheque to storage
 		case "is":
-			execmd.IncAndSendCheque()
+			err = app.User.IncAndSendPayChequeByID()
+			if err != nil {
+				fmt.Println("user inc and send paycheque error:", err)
+			}
 		// list storage's cheque db
 		case "ls":
-			execmd.ListDB(false)
+			err = app.Pro.ListPayCheque()
+			if err != nil {
+				fmt.Println("provider list paycheque error:", err)
+			}
 		// delete a cheque of storage
 		case "ds":
-			execmd.DeleteChequeByID(false)
+			err = app.Pro.DeleteChequeByID()
+			if err != nil {
+				fmt.Println("provider delete paycheque error:", err)
+			}
 		// call cash
 		case "cc":
-			execmd.StorageCallCash()
+			//execmd.StorageCallCash()
+			err = app.Pro.CallCashByID()
+			if err != nil {
+				fmt.Println("provider call cash error:", err)
+			}
+
 		// TestCall
-		case "t":
-			execmd.TestCall()
+		//case "t":
+		//execmd.TestCall()
 		case "cu":
-			execmd.ClearDB(true)
+			err = app.User.ClearDB()
+			if err != nil {
+				fmt.Println("user clear db error:", err)
+			}
 		case "cs":
-			execmd.ClearDB(false)
+			err = app.Pro.ClearDB()
+			if err != nil {
+				fmt.Println("provider clear db error:", err)
+			}
 		case "sh":
-			execmd.ShowPayChequeByID()
+			err = app.User.ShowPayChequeByID()
+			if err != nil {
+				fmt.Println("user show paycheque error:", err)
+			}
 		default:
 			print.Printf100ms("invalid input.\n")
 		}
 	}
+
 }
 
 // set stream handler
-func runListener(ctx context.Context, ha host.Host, listenPort int, listenerDone chan int) {
+func runListener(app *app.App, ctx context.Context, ha host.Host, listenPort int, listenerDone chan int) {
 
 	// executed handler when a stream opened.
 	ha.SetStreamHandler("/1", func(s network.Stream) {
 		print.Println100ms("--> Received command 1")
-		if err := handler.BuyCheckHandler(s); err != nil {
+		if err := app.Op.BuyChequeHandler(s); err != nil {
 			log.Println(err)
 			s.Reset()
 		}
@@ -148,7 +196,7 @@ func runListener(ctx context.Context, ha host.Host, listenPort int, listenerDone
 	// handler for cmd 2
 	ha.SetStreamHandler("/2", func(s network.Stream) {
 		print.Println100ms("--> Received command 2")
-		if err := handler.SendCheckHandler(s); err != nil {
+		if err := app.Pro.SendCheckHandler(s); err != nil {
 			log.Println(err)
 			s.Reset()
 		}

@@ -35,4 +35,4 @@ var StrStorageSK = "cc6d63f85de8fef05446ebdd3c537c72152d0fc437fd7aa62b3019b79bd1
 
 var Increase string = "1000000000000000000"
 
-var ContractAddress string
+var ContractAddress string = ""

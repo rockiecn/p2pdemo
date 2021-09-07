@@ -1,38 +1,16 @@
 package execmd
 
-import (
-	"context"
-	"encoding/hex"
-	"fmt"
-	"io/ioutil"
-	"log"
-	"math/big"
-
-	"github.com/syndtr/goleveldb/leveldb"
-	"google.golang.org/protobuf/proto"
-
-	"github.com/ethereum/go-ethereum/common"
-
-	"github.com/rockiecn/interact/callstorage"
-	"github.com/rockiecn/p2pdemo/callcash"
-	"github.com/rockiecn/p2pdemo/cash"
-	"github.com/rockiecn/p2pdemo/global"
-	"github.com/rockiecn/p2pdemo/hostops"
-	"github.com/rockiecn/p2pdemo/pb"
-	"github.com/rockiecn/p2pdemo/print"
-	"github.com/rockiecn/p2pdemo/sigapi"
-	"github.com/rockiecn/p2pdemo/utils"
-)
-
+/*
 // deploy cash
 func DeployCash() {
 	fmt.Println("call deploy cash")
 	callcash.CallDeploy()
 }
+*/
 
+/*
 // user get Cheque from operator
 func GetCheque() {
-
 	if !global.RemoteExist {
 		fmt.Println("No remote peer exist, record one as operator.")
 		return
@@ -176,38 +154,41 @@ func GetCheque() {
 	// show table
 	defer utils.ListPayCheque(true)
 	defer db.Close()
-
 }
+*/
 
 // user send marshaled PayCheques to storage
-func SendOnePayChequeByID() {
-	if !global.RemoteExist {
-		fmt.Println("No remote peer exist, record one as storage.")
-		return
-	}
+// func SendOnePayChequeByID() {
+// 	if !global.RemoteExist {
+// 		fmt.Println("No remote peer exist, record one as storage.")
+// 		return
+// 	}
 
-	utils.ListPayCheque(true)
+// 	utils.ListPayCheque(true)
 
-	print.Println100ms("-> Choose cheque ID to send.")
-	var uID uint
-	fmt.Scanf("%d", &uID)
-	print.Printf100ms("-> You choosed %d\n", uID)
+// 	print.Println100ms("-> Choose cheque ID to send.")
+// 	var uID uint
+// 	fmt.Scanf("%d", &uID)
+// 	print.Printf100ms("-> You choosed %d\n", uID)
 
-	// get key from id
-	keyByte, err := utils.IDtoKey(uID, true)
-	if err != nil {
-		fmt.Println("ID to Key error", err)
-		return
-	}
+// 	// get key from id
+// 	keyByte, err := utils.IDtoKey(uID, true)
+// 	if err != nil {
+// 		fmt.Println("ID to Key error", err)
+// 		return
+// 	}
 
-	utils.SendChequeByKey(keyByte)
-}
+// 	utils.SendChequeByKey(keyByte)
+// }
 
+/*
 // list db, true for user, false for storage
 func ListDB(user bool) {
 	utils.ListPayCheque(user)
 }
+*/
 
+/*
 // delete an entry from user db, true for user, false for storage
 func DeleteChequeByID(user bool) {
 
@@ -257,9 +238,11 @@ func DeleteChequeByID(user bool) {
 	defer db.Close()
 
 }
+*/
 
+/*
 //
-func ShowPayChequeByID() {
+func ShowPayChequeByID(app *app.App) error {
 
 	var Index []string = global.UserIndex
 
@@ -271,23 +254,35 @@ func ShowPayChequeByID() {
 	fmt.Scanf("%d", &uID)
 	if !(uID < uint(len(Index))) {
 		fmt.Println("Invalid input")
-		return
+		return errors.New("invalid input")
 	}
 	if Index[uID] == "" {
 		fmt.Println("ID not exist")
-		return
+		return errors.New("ID not exist")
 	}
 
 	keyByte, err := hex.DecodeString(Index[uID])
 	if err != nil {
 		fmt.Println("decode string error: ", err)
+		return err
 	}
 
-	utils.ShowPayChequeInfoByKey(keyByte)
-}
+	//utils.ShowPayChequeInfoByKey(keyByte)
+	PayCheque, err := app.User.GetPayChequeByKey(keyByte)
+	if err != nil {
+		fmt.Println("get paycheque error:", err)
+		return err
+	}
+	print.PrintPayCheque(PayCheque)
 
+	return nil
+
+}
+*/
+
+/*
 // increase payvalue, then send paycheque to storage
-func IncAndSendCheque() {
+func IncAndSendChequeByID() {
 
 	utils.ListPayCheque(true)
 
@@ -322,127 +317,135 @@ func IncAndSendCheque() {
 
 	utils.ListPayCheque(true)
 }
+*/
 
+/*
 // storage call cash contract
 func StorageCallCash() {
 	fmt.Println("-> Call contract")
 
-	utils.ListPayCheque(false)
 
-	print.Println100ms("-> Choose a cheque ID:")
-	var uID uint
-	fmt.Scanf("%d", &uID)
-	print.Printf100ms("-> You choosed %d\n", uID)
+		utils.ListPayCheque(false)
 
-	// get key from id
-	keyByte, err0 := utils.IDtoKey(uID, false)
-	if err0 != nil {
-		fmt.Println("id to key error")
-		return
-	}
+		print.Println100ms("-> Choose a cheque ID:")
+		var uID uint
+		fmt.Scanf("%d", &uID)
+		print.Printf100ms("-> You choosed %d\n", uID)
 
-	print.Printf100ms(("PayCheque key: %x\n"), keyByte)
+		// get key from id
+		keyByte, err0 := utils.IDtoKey(uID, false)
+		if err0 != nil {
+			fmt.Println("id to key error")
+			return
+		}
 
-	// read PayCheque data from db
-	// create/open db
-	db, err1 := leveldb.OpenFile("./storage_paycheque.db", nil)
-	if err1 != nil {
-		fmt.Println("opfen db error")
-		return
-	}
-	defer db.Close()
+		print.Printf100ms(("PayCheque key: %x\n"), keyByte)
 
-	// get paycheque
-	in, err2 := db.Get(keyByte, nil)
-	if err2 != nil {
-		fmt.Println("db get error")
-		return
-	}
+		// read PayCheque data from db
+		// create/open db
+		db, err1 := leveldb.OpenFile("./storage_paycheque.db", nil)
+		if err1 != nil {
+			fmt.Println("opfen db error")
+			return
+		}
+		defer db.Close()
 
-	PayChequeSig := in[:65]
-	PayChequeMarshaled := in[65:]
+		// get paycheque
+		in, err2 := db.Get(keyByte, nil)
+		if err2 != nil {
+			fmt.Println("db get error")
+			return
+		}
 
-	print.Println100ms("---- in StorageCallCash")
-	//fmt.Println("PayChequeSig:", PayChequeSig)
-	//fmt.Println("PayChequeMarshaled:", PayChequeMarshaled)
+		PayChequeSig := in[:65]
+		PayChequeMarshaled := in[65:]
 
-	// unmarshal it to get PayCheque itself
-	PayCheque := &pb.PayCheque{}
-	if err := proto.Unmarshal(PayChequeMarshaled, PayCheque); err != nil {
-		log.Println("Failed to parse paycheck:", err)
-		return
-	}
+		print.Println100ms("---- in StorageCallCash")
+		//fmt.Println("PayChequeSig:", PayChequeSig)
+		//fmt.Println("PayChequeMarshaled:", PayChequeMarshaled)
 
-	// eth to wei
-	// z18 := new(big.Int)
-	// z18.SetString("1000000000000000000", 10)
-	// weiPay := new(big.Int)
-	// weiPay.Mul(bigPay, z18) // eth to wei
+		// unmarshal it to get PayCheque itself
+		PayCheque := &pb.PayCheque{}
+		if err := proto.Unmarshal(PayChequeMarshaled, PayCheque); err != nil {
+			log.Println("Failed to parse paycheck:", err)
+			return
+		}
 
-	// cheque
-	var paychequeContract cash.PayCheque
-	//bigValue := big.NewInt(PayCheque.Cheque.Value)
-	bigValue := big.NewInt(0)
-	var ok bool
-	bigValue, ok = bigValue.SetString(PayCheque.Cheque.Value, 10)
-	if !ok {
-		print.Println100ms("big.SetString failed")
-		return
-	}
+		// eth to wei
+		// z18 := new(big.Int)
+		// z18.SetString("1000000000000000000", 10)
+		// weiPay := new(big.Int)
+		// weiPay.Mul(bigPay, z18) // eth to wei
 
-	paychequeContract.Cheque.Value = bigValue
-	paychequeContract.Cheque.TokenAddr = common.HexToAddress(PayCheque.Cheque.TokenAddress)
-	//bigNonce := big.NewInt(PayCheque.Cheque.Nonce)
-	bigNonce := big.NewInt(0)
-	bigNonce, ok = bigNonce.SetString(PayCheque.Cheque.Nonce, 10)
-	if !ok {
-		print.Println100ms("big.SetString failed")
-		return
-	}
+		// cheque
+		var paychequeContract cash.PayCheque
+		//bigValue := big.NewInt(PayCheque.Cheque.Value)
+		bigValue := big.NewInt(0)
+		var ok bool
+		bigValue, ok = bigValue.SetString(PayCheque.Cheque.Value, 10)
+		if !ok {
+			print.Println100ms("big.SetString failed")
+			return
+		}
 
-	paychequeContract.Cheque.Nonce = bigNonce
-	paychequeContract.Cheque.FromAddr = common.HexToAddress(PayCheque.Cheque.From)
-	paychequeContract.Cheque.ToAddr = common.HexToAddress(PayCheque.Cheque.To)
-	paychequeContract.Cheque.OpAddr = common.HexToAddress(PayCheque.Cheque.OperatorAddress)
-	paychequeContract.Cheque.ContractAddr = common.HexToAddress(PayCheque.Cheque.ContractAddress)
-	// paycheque
-	paychequeContract.ChequeSig = PayCheque.ChequeSig
-	//bigPayValue := big.NewInt(PayCheque.PayValue)
-	bigPayValue := big.NewInt(0)
-	bigPayValue, ok = bigPayValue.SetString(PayCheque.PayValue, 10)
-	if !ok {
-		print.Println100ms("big.SetString failed")
-		return
-	}
+		paychequeContract.Cheque.Value = bigValue
+		paychequeContract.Cheque.TokenAddr = common.HexToAddress(PayCheque.Cheque.TokenAddress)
+		//bigNonce := big.NewInt(PayCheque.Cheque.Nonce)
+		bigNonce := big.NewInt(0)
+		bigNonce, ok = bigNonce.SetString(PayCheque.Cheque.Nonce, 10)
+		if !ok {
+			print.Println100ms("big.SetString failed")
+			return
+		}
 
-	paychequeContract.PayValue = bigPayValue
+		paychequeContract.Cheque.Nonce = bigNonce
+		paychequeContract.Cheque.FromAddr = common.HexToAddress(PayCheque.Cheque.From)
+		paychequeContract.Cheque.ToAddr = common.HexToAddress(PayCheque.Cheque.To)
+		paychequeContract.Cheque.OpAddr = common.HexToAddress(PayCheque.Cheque.OperatorAddress)
+		paychequeContract.Cheque.ContractAddr = common.HexToAddress(PayCheque.Cheque.ContractAddress)
+		// paycheque
+		paychequeContract.ChequeSig = PayCheque.ChequeSig
+		//bigPayValue := big.NewInt(PayCheque.PayValue)
+		bigPayValue := big.NewInt(0)
+		bigPayValue, ok = bigPayValue.SetString(PayCheque.PayValue, 10)
+		if !ok {
+			print.Println100ms("big.SetString failed")
+			return
+		}
 
-	print.Println100ms("------------- show paycheque contract ---------------")
-	print.Printf100ms("paychequeContract.Cheque.Value: %s\n", paychequeContract.Cheque.Value.String())
-	print.Printf100ms("paychequeContract.Cheque.TokenAddr: %s\n", paychequeContract.Cheque.TokenAddr)
+		paychequeContract.PayValue = bigPayValue
 
-	print.Printf100ms("paychequeContract.Cheque.Nonce: %s\n", paychequeContract.Cheque.Nonce.String())
-	print.Printf100ms("paychequeContract.Cheque.FromAddr: %s\n", paychequeContract.Cheque.FromAddr)
-	print.Printf100ms("paychequeContract.Cheque.ToAddr: %s\n", paychequeContract.Cheque.ToAddr)
-	print.Printf100ms("paychequeContract.Cheque.OpAddr: %s\n", paychequeContract.Cheque.OpAddr)
-	print.Printf100ms("paychequeContract.ChequeSig: %x\n", paychequeContract.ChequeSig)
-	print.Printf100ms("paychequeContract.PayValue: %s\n", paychequeContract.PayValue.String())
-	print.Println100ms("")
+		print.Println100ms("------------- show paycheque contract ---------------")
+		print.Printf100ms("paychequeContract.Cheque.Value: %s\n", paychequeContract.Cheque.Value.String())
+		print.Printf100ms("paychequeContract.Cheque.TokenAddr: %s\n", paychequeContract.Cheque.TokenAddr)
 
-	//errCallApply := callcash.CallApplyPayCheque(From, bigNonce, To, bigPay, PayChequeSig)
-	errCallApply := callcash.CallApplyPayCheque(paychequeContract, PayChequeSig)
-	if errCallApply != nil {
-		fmt.Println("callApplyPayCheque error:", errCallApply)
-		fmt.Println("storage address:", PayCheque.Cheque.To)
-		fmt.Println("nonce:", PayCheque.Cheque.Nonce)
-	}
+		print.Printf100ms("paychequeContract.Cheque.Nonce: %s\n", paychequeContract.Cheque.Nonce.String())
+		print.Printf100ms("paychequeContract.Cheque.FromAddr: %s\n", paychequeContract.Cheque.FromAddr)
+		print.Printf100ms("paychequeContract.Cheque.ToAddr: %s\n", paychequeContract.Cheque.ToAddr)
+		print.Printf100ms("paychequeContract.Cheque.OpAddr: %s\n", paychequeContract.Cheque.OpAddr)
+		print.Printf100ms("paychequeContract.ChequeSig: %x\n", paychequeContract.ChequeSig)
+		print.Printf100ms("paychequeContract.PayValue: %s\n", paychequeContract.PayValue.String())
+		print.Println100ms("")
+
+		//errCallApply := callcash.CallApplyPayCheque(From, bigNonce, To, bigPay, PayChequeSig)
+		errCallApply := callcash.CallApplyPayCheque(paychequeContract, PayChequeSig)
+		if errCallApply != nil {
+			fmt.Println("callApplyPayCheque error:", errCallApply)
+			fmt.Println("storage address:", PayCheque.Cheque.To)
+			fmt.Println("nonce:", PayCheque.Cheque.Nonce)
+		}
+
 }
+*/
 
+/*
 func TestCall() {
 	print.Println100ms("call retrieve")
 	callstorage.CallRetrieve()
 }
+*/
 
+/*
 // delete all data of DB
 func ClearDB(user bool) {
 	var dbfile string
@@ -470,14 +473,16 @@ func ClearDB(user bool) {
 		return
 	}
 }
+*/
 
-// get contract nonce
+/*
+// get contract nonce, used by operator
 func GetContractNonce() {
 
 	AddressTo := common.HexToAddress(global.StrToAddr)
 	//print.Printf100ms("address to :%s\n", AddressTo.String())
 
-	err := callcash.CallGetNodeNonce(AddressTo)
+	_, err := callcash.CallGetNodeNonce(AddressTo)
 	if err != nil {
 		fmt.Println("call get nonce error: ", err)
 		return
@@ -526,3 +531,4 @@ func ShowNonceInOperatorDB() {
 	bigNonce.SetBytes(byteNonce)
 	fmt.Println("nonce:", bigNonce.String())
 }
+*/

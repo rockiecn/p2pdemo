@@ -158,11 +158,11 @@ func CallApplyPayCheque(paycheque cash.PayCheque, paychequeSig []byte) error {
 }
 
 // call get contract node nonce
-func CallGetNodeNonce(node common.Address) error {
+func CallGetNodeNonce(node common.Address) (*big.Int, error) {
 	cli, err := clientops.GetClient(hostops.HOST)
 	if err != nil {
 		fmt.Println("failed to dial geth", err)
-		return err
+		return nil, err
 	}
 	defer cli.Close()
 
@@ -171,14 +171,14 @@ func CallGetNodeNonce(node common.Address) error {
 	db, err := leveldb.OpenFile("./operator_data.db", nil)
 	if err != nil {
 		fmt.Print("open db error:", err)
-		return err
+		return nil, err
 	}
 	defer db.Close()
 	// store cash address
 	byteContractAddr, err := db.Get([]byte("contractAddr"), nil)
 	if err != nil {
 		fmt.Println("db get data error:", err)
-		return err
+		return nil, err
 	}
 
 	AddressContract := common.HexToAddress(string(byteContractAddr))
@@ -186,18 +186,18 @@ func CallGetNodeNonce(node common.Address) error {
 	cashInstance, err2 := cash.NewCash(AddressContract, cli)
 	if err2 != nil {
 		fmt.Println("NewCash err: ", err2)
-		return err2
+		return nil, err2
 	}
 
 	bigNonce, err := cashInstance.GetNodeNonce(nil, node)
 	if err != nil {
 		fmt.Println("tx failed :", err)
-		return err
+		return nil, err
 	}
 
 	fmt.Println()
 	fmt.Println("Node: ", node.String())
 	fmt.Println("Node nonce: ", bigNonce.String())
 
-	return nil
+	return bigNonce, nil
 }

@@ -13,7 +13,7 @@ require (
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/multiformats/go-multiaddr v0.3.3
-	github.com/rockiecn/interact v1.1.1
+	//github.com/rockiecn/interact v1.1.1
 	github.com/syndtr/goleveldb v1.0.1-0.20210305035536-64b5b1c73954
 	go.uber.org/zap v1.17.0 // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect

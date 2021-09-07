@@ -1,13 +1,10 @@
 package handler
 
 import (
-	"encoding/hex"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/syndtr/goleveldb/leveldb"
 
@@ -24,7 +21,7 @@ import (
 )
 
 // Cmd1Handler - command 1 handler, run on operator, send Cheque to user
-func BuyCheckHandler(s network.Stream) error {
+func BuyChequeHandler(s network.Stream) error {
 
 	print.Println100ms("--> Construct and send Cheque...")
 
@@ -140,31 +137,31 @@ func BuyCheckHandler(s network.Stream) error {
 	return err
 }
 
+/*
 // Cmd2Handler - command 2 handler, run on storage, receive PayCheque from user and record to db
 func SendCheckHandler(s network.Stream) error {
 
-	/*
-		// // Read data method 1
-		// in := make([]byte, 1024)
-		// reader := bufio.NewReader(s)
-		// n, err := reader.Read(in)
-		// if err != nil {
-		// 	fmt.Println("read err: ", err)
-		// }
-		// // get real data
-		// if n > 0 {
-		// 	in = in[:n]
-		// }
-		// fmt.Printf("in: %v", in)
+	// // Read data method 1
+	// in := make([]byte, 1024)
+	// reader := bufio.NewReader(s)
+	// n, err := reader.Read(in)
+	// if err != nil {
+	// 	fmt.Println("read err: ", err)
+	// }
+	// // get real data
+	// if n > 0 {
+	// 	in = in[:n]
+	// }
+	// fmt.Printf("in: %v", in)
 
-		// // Read data method 2
-		// reader := bufio.NewReader(s)
-		// in, err := reader.ReadBytes('\n')
-		// if err != nil {
-		// 	return err
-		// }
-		// fmt.Printf("read: %v", in)
-	*/
+	// // Read data method 2
+	// reader := bufio.NewReader(s)
+	// in, err := reader.ReadBytes('\n')
+	// if err != nil {
+	// 	return err
+	// }
+	// fmt.Printf("read: %v", in)
+
 	// Read data method 3
 	// Caution: Need writer to close stream first.
 	in, err := ioutil.ReadAll(s)
@@ -255,3 +252,4 @@ func SendCheckHandler(s network.Stream) error {
 
 	return nil
 }
+*/

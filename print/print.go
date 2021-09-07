@@ -7,7 +7,6 @@ import (
 	"github.com/rockiecn/p2pdemo/global"
 	"github.com/rockiecn/p2pdemo/hostops"
 	"github.com/rockiecn/p2pdemo/pb"
-	"github.com/syndtr/goleveldb/leveldb"
 )
 
 func PrintCheque(Cheque *pb.Cheque) {
@@ -49,28 +48,27 @@ func Printf100ms(format string, a ...interface{}) {
 // print command menu
 func PrintMenu() {
 
-	var contractAddress string
 	var showPeer string
-	var err error
 	if global.RemoteExist {
 		showPeer = global.Peerid.Pretty()
 	} else {
 		showPeer = "No emote Peer"
 	}
 
-	db, err := leveldb.OpenFile("./operator_data.db", nil)
-	if err != nil {
-		fmt.Println("Open db error")
-	}
-	defer db.Close()
-	var contractAddrByte []byte
-	contractAddrByte, err = db.Get([]byte("contractAddr"), nil)
-	if err != nil {
-		fmt.Println("Get cash address error:", err)
-		contractAddress = "none"
-	} else {
-		contractAddress = string(contractAddrByte)
-	}
+	// db, err := leveldb.OpenFile("./operator_data.db", nil)
+	// if err != nil {
+	// 	fmt.Println("Open db error")
+	// }
+	// defer db.Close()
+
+	// var contractAddrByte []byte
+	// contractAddrByte, err = db.Get([]byte("contractAddr"), nil)
+	// if err != nil {
+	// 	fmt.Println("Get cash address error:", err)
+	// 	contractAddress = "none"
+	// } else {
+	// 	contractAddress = string(contractAddrByte)
+	// }
 
 	Println100ms("")
 	Println100ms("")
@@ -81,7 +79,7 @@ func PrintMenu() {
 	Println100ms("+++++++++++++++++++++")
 	Println100ms("")
 	Printf100ms("Remote Peer: %s\n", showPeer)
-	Printf100ms("Contract Address: %s\n", contractAddress)
+	Printf100ms("Contract Address: %s\n", global.ContractAddress)
 	Println100ms("")
 	Println100ms("              ======================= Menu =======================")
 	Println100ms("               m   : [ALL]       Show menu")
