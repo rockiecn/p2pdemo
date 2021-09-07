@@ -9,6 +9,8 @@ import (
 	"github.com/rockiecn/p2pdemo/pb"
 )
 
+var ContractAddress string
+
 func PrintCheque(Cheque *pb.Cheque) {
 	Println100ms("------------------ Print Cheque ------------------")
 	Printf100ms("->Cheque.Value: %s\n", Cheque.Value)
@@ -79,7 +81,7 @@ func PrintMenu() {
 	Println100ms("+++++++++++++++++++++")
 	Println100ms("")
 	Printf100ms("Remote Peer: %s\n", showPeer)
-	Printf100ms("Contract Address: %s\n", global.ContractAddress)
+	Printf100ms("Contract Address: %s\n", ContractAddress)
 	Println100ms("")
 	Println100ms("              ======================= Menu =======================")
 	Println100ms("               m   : [ALL]       Show menu")

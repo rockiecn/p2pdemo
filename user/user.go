@@ -25,14 +25,16 @@ import (
 )
 
 type User struct {
-	UserDB          *leveldb.DB // provider -> nonce
-	ContractAddress string      // contract address
+	UserDB *leveldb.DB // provider -> nonce
+	//ContractAddress string      // contract address
 
 	DBfile  string
 	DBIndex []string
 
 	UserAddr string // "Ab8483F64d9C6d1EcF9b849Ae677dD3315835cb2"
 	UserSK   string // "7e5bfb82febc4c2c8529167104271ceec190eafdca277314912eaabdb67c6e5f"
+
+	Increase string
 
 	db.DB // interface DB
 }
@@ -44,18 +46,20 @@ func (user *User) Init() error {
 	user.OpenDB()
 	defer user.CloseDB()
 
-	user.ContractAddress = ""
+	//user.ContractAddress = ""
 
 	user.DBIndex = []string{}
 
 	user.UserAddr = "Ab8483F64d9C6d1EcF9b849Ae677dD3315835cb2"
 	user.UserSK = "7e5bfb82febc4c2c8529167104271ceec190eafdca277314912eaabdb67c6e5f"
 
+	user.Increase = "1000000000000000000"
+
 	byteAddr, err := user.UserDB.Get([]byte("contractAddr"), nil)
 	if err != nil {
 		return errors.New("operator init: read contract address failed")
 	}
-	user.ContractAddress = string(byteAddr)
+	print.ContractAddress = string(byteAddr)
 
 	return nil
 }
@@ -177,7 +181,7 @@ func (user *User) BuyCheque() (*pb.PayCheque, error) {
 		print.Printf100ms("DEBUG> paycheque hash: %x\n", hash)
 	}
 	// sign PayCheque by user' sk
-	var userSkByte = []byte(global.StrUserSK)
+	var userSkByte = []byte(user.UserSK)
 	PayChequeSig, err := sigapi.Sign(hash, userSkByte)
 	if err != nil {
 		log.Print("sign error")
@@ -401,7 +405,7 @@ func (user *User) IncPayValueByKey(key []byte) error {
 		return errors.New("big.SetString failed")
 	}
 
-	bigInc, ok = bigInc.SetString(global.Increase, 10)
+	bigInc, ok = bigInc.SetString(user.Increase, 10)
 	if !ok {
 		print.Println100ms("big.SetString failed")
 		return errors.New("big.SetString failed")
@@ -439,7 +443,7 @@ func (user *User) IncPayValueByKey(key []byte) error {
 		print.Printf100ms("DEBUG> paycheque hash: %x\n", hash)
 	}
 	// sign PayCheque by user
-	var userSkByte = []byte(global.StrUserSK)
+	var userSkByte = []byte(user.UserSK)
 	PayChequeSig, err := sigapi.Sign(hash, userSkByte)
 	if err != nil {
 		log.Print("sign error")

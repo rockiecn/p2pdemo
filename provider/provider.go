@@ -16,10 +16,11 @@ import (
 
 	"github.com/syndtr/goleveldb/leveldb"
 
-	"github.com/rockiecn/p2pdemo/callcash"
 	"github.com/rockiecn/p2pdemo/cash"
+	"github.com/rockiecn/p2pdemo/clientops"
 	"github.com/rockiecn/p2pdemo/db"
 	"github.com/rockiecn/p2pdemo/global"
+	"github.com/rockiecn/p2pdemo/hostops"
 	"github.com/rockiecn/p2pdemo/pb"
 	"github.com/rockiecn/p2pdemo/print"
 	"github.com/rockiecn/p2pdemo/sigapi"
@@ -27,14 +28,18 @@ import (
 )
 
 type Provider struct {
-	ProDB           *leveldb.DB // provider -> nonce
-	ContractAddress string      // contract address
+	ProDB *leveldb.DB // provider -> nonce
+	//ContractAddress string      // contract address
 
 	DBfile  string
 	DBIndex []string
 
 	ProviderAddr string // "4B20993Bc481177ec7E8f571ceCaE8A9e22C02db"
 	ProviderSK   string // "cc6d63f85de8fef05446ebdd3c537c72152d0fc437fd7aa62b3019b79bd1fdd4"
+
+	TokenAddr string // token address
+	FromAddr  string // user
+	ToAddr    string // storage
 
 	db.DB
 }
@@ -46,18 +51,22 @@ func (pro *Provider) Init() error {
 	pro.OpenDB()
 	defer pro.CloseDB()
 
-	pro.ContractAddress = ""
+	//pro.ContractAddress = ""
 
 	pro.DBIndex = []string{}
 
 	pro.ProviderAddr = "4B20993Bc481177ec7E8f571ceCaE8A9e22C02db"
 	pro.ProviderSK = "cc6d63f85de8fef05446ebdd3c537c72152d0fc437fd7aa62b3019b79bd1fdd4"
 
+	pro.TokenAddr = "b213d01542d129806d664248a380db8b12059061" // token address
+	pro.FromAddr = "Ab8483F64d9C6d1EcF9b849Ae677dD3315835cb2"  // user
+	pro.ToAddr = "4B20993Bc481177ec7E8f571ceCaE8A9e22C02db"    // storage
+
 	byteAddr, err := pro.ProDB.Get([]byte("contractAddr"), nil)
 	if err != nil {
 		return errors.New("operator init: read contract address failed")
 	}
-	pro.ContractAddress = string(byteAddr)
+	print.ContractAddress = string(byteAddr)
 
 	return nil
 }
@@ -480,12 +489,55 @@ func (pro *Provider) CallCashByID() error {
 	print.Println100ms("")
 
 	//errCallApply := callcash.CallApplyPayCheque(From, bigNonce, To, bigPay, PayChequeSig)
-	errCallApply := callcash.CallApplyPayCheque(paychequeContract, PayChequeSig)
+	errCallApply := pro.CallApplyPayCheque(paychequeContract, PayChequeSig)
 	if errCallApply != nil {
 		fmt.Println("callApplyPayCheque error:", errCallApply)
 		fmt.Println("storage address:", PayCheque.Cheque.To)
 		fmt.Println("nonce:", PayCheque.Cheque.Nonce)
 	}
+
+	return nil
+}
+
+// CallApplyCheque - send tx to contract to call apply cheque method.
+func (pro *Provider) CallApplyPayCheque(paycheque cash.PayCheque, paychequeSig []byte) error {
+	cli, err := clientops.GetClient(hostops.HOST)
+	if err != nil {
+		fmt.Println("failed to dial geth", err)
+		return err
+	}
+	defer cli.Close()
+
+	auth, err := clientops.MakeAuth(pro.ProviderSK, nil, nil, big.NewInt(1000), 9000000)
+	if err != nil {
+		return err
+	}
+
+	// get contract instance from address
+	cashInstance, err := cash.NewCash(paycheque.Cheque.ContractAddr, cli)
+	if err != nil {
+		fmt.Println("NewCash err: ", err)
+		return err
+	}
+
+	print.Printf100ms("cheque.value: %s\n", paycheque.Cheque.Value)
+	print.Printf100ms("cheque.TokenAddr: %s\n", paycheque.Cheque.TokenAddr)
+	print.Printf100ms("cheque.Nonce: %s\n", paycheque.Cheque.Nonce.String())
+	print.Printf100ms("cheque.FromAddr: %s\n", paycheque.Cheque.FromAddr)
+	print.Printf100ms("cheque.ToAddr: %s\n", paycheque.Cheque.ToAddr)
+	print.Printf100ms("cheque.OpAddr: %s\n", paycheque.Cheque.OpAddr)
+	print.Printf100ms("cheque.ContractAddress: %s\n", paycheque.Cheque.ContractAddr)
+	print.Printf100ms("paycheque.ChequeSig: %x\n", paycheque.ChequeSig)
+	print.Printf100ms("paycheque.PayValue: %s\n", paycheque.PayValue.String())
+	print.Printf100ms("paychequeSig: %x\n", paychequeSig)
+
+	_, err = cashInstance.ApplyCheque(auth, paycheque, paychequeSig)
+	if err != nil {
+		fmt.Println("tx failed :", err)
+		return err
+	}
+
+	fmt.Println("-> Now mine a block to complete tx.")
 
 	return nil
 }

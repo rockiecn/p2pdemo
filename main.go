@@ -176,7 +176,6 @@ func main() {
 			print.Printf100ms("invalid input.\n")
 		}
 	}
-
 }
 
 // set stream handler

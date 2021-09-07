@@ -15,24 +15,27 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/rockiecn/p2pdemo/callcash"
 	"github.com/rockiecn/p2pdemo/cash"
 	"github.com/rockiecn/p2pdemo/clientops"
-	"github.com/rockiecn/p2pdemo/global"
 	"github.com/rockiecn/p2pdemo/hostops"
 	"github.com/rockiecn/p2pdemo/pb"
+	"github.com/rockiecn/p2pdemo/print"
 	"github.com/rockiecn/p2pdemo/sigapi"
 	"github.com/rockiecn/p2pdemo/utils"
 )
 
 type Operator struct {
-	OpDB            *leveldb.DB // provider -> nonce
-	ContractAddress string      // contract address
+	OpDB *leveldb.DB // provider -> nonce
+	//ContractAddress string      // contract address
 
 	DBfile string
 
 	OperatorAddr string // "5B38Da6a701c568545dCfcB03FcB875f56beddC4"
 	OperatorSK   string // "503f38a9c967ed597e47fe25643985f032b072db8075426a92110f82df48dfcb"
+
+	TokenAddr string // token address
+	FromAddr  string // user
+	ToAddr    string // storage
 }
 
 // init operator, need db open first
@@ -42,15 +45,19 @@ func (op *Operator) Init() error {
 	op.OpenDB()
 	defer op.CloseDB()
 
-	op.ContractAddress = ""
+	//op.ContractAddress = ""
 	op.OperatorAddr = "5B38Da6a701c568545dCfcB03FcB875f56beddC4"
 	op.OperatorSK = "503f38a9c967ed597e47fe25643985f032b072db8075426a92110f82df48dfcb"
+
+	op.TokenAddr = "b213d01542d129806d664248a380db8b12059061" // token address
+	op.FromAddr = "Ab8483F64d9C6d1EcF9b849Ae677dD3315835cb2"  // user
+	op.ToAddr = "4B20993Bc481177ec7E8f571ceCaE8A9e22C02db"    // storage
 
 	byteAddr, err := op.OpDB.Get([]byte("contractAddr"), nil)
 	if err != nil {
 		return errors.New("operator init: read contract address failed")
 	}
-	op.ContractAddress = string(byteAddr)
+	print.ContractAddress = string(byteAddr)
 
 	return nil
 }
@@ -91,7 +98,7 @@ func (op *Operator) DeployContract() (common.Address, error) {
 	defer client.Close()
 
 	// get sk
-	sk, err := crypto.HexToECDSA(global.StrOperatorSK)
+	sk, err := crypto.HexToECDSA(op.OperatorSK)
 	if err != nil {
 		fmt.Println("HexToECDSA err: ", err)
 		return contractAddr, err
@@ -161,7 +168,7 @@ func (op *Operator) DeployContract() (common.Address, error) {
 		return contractAddr, err
 	}
 
-	global.ContractAddress = contractAddr.String()
+	print.ContractAddress = contractAddr.String()
 
 	return contractAddr, nil
 }
@@ -196,11 +203,11 @@ func (op *Operator) BuyChequeHandler(s network.Stream) error {
 
 	// construct Cheque
 	Cheque := &pb.Cheque{}
-	Cheque.Value = "100000000000000000000"          // Cheque 100
-	Cheque.TokenAddress = global.StrTokenAddr       // token address
-	Cheque.From = global.StrFromAddr                // user
-	Cheque.To = global.StrToAddr                    // storage
-	Cheque.OperatorAddress = global.StrOperatorAddr // operator
+	Cheque.Value = "100000000000000000000"   // Cheque 100
+	Cheque.TokenAddress = op.TokenAddr       // token address
+	Cheque.From = op.FromAddr                // user
+	Cheque.To = op.ToAddr                    // storage
+	Cheque.OperatorAddress = op.OperatorAddr // operator
 
 	// storage -> nonce
 	nonce, err := op.OpDB.Get([]byte(Cheque.To), nil)
@@ -287,10 +294,10 @@ func (op *Operator) BuyChequeHandler(s network.Stream) error {
 // get contract nonce, used by operator
 func (op *Operator) GetContractNonce() (*big.Int, error) {
 
-	AddressTo := common.HexToAddress(global.StrToAddr)
+	AddressTo := common.HexToAddress(op.ToAddr)
 	//print.Printf100ms("address to :%s\n", AddressTo.String())
 
-	bigNonce, err := callcash.CallGetNodeNonce(AddressTo)
+	bigNonce, err := op.CallGetNodeNonce(AddressTo)
 	if err != nil {
 		fmt.Println("call get nonce error: ", err)
 		return nil, err
@@ -309,7 +316,7 @@ func (op *Operator) ResetNonceInDB() error {
 	bigNonce := big.NewInt(0)
 
 	// storage -> nonce
-	err := op.OpDB.Put([]byte(global.StrToAddr), bigNonce.Bytes(), nil)
+	err := op.OpDB.Put([]byte(op.ToAddr), bigNonce.Bytes(), nil)
 	if err != nil {
 		fmt.Println("reset nonce error: ", err)
 		return err
@@ -327,7 +334,7 @@ func (op *Operator) ShowNonceInDB() error {
 	bigNonce := big.NewInt(0)
 
 	// storage -> nonce
-	byteNonce, err := op.OpDB.Get([]byte(global.StrToAddr), nil)
+	byteNonce, err := op.OpDB.Get([]byte(op.ToAddr), nil)
 	if err != nil {
 		fmt.Println("get nonce error: ", err)
 		return err
@@ -336,4 +343,45 @@ func (op *Operator) ShowNonceInDB() error {
 	fmt.Println("nonce:", bigNonce.String())
 
 	return nil
+}
+
+// call get contract node nonce
+func (op *Operator) CallGetNodeNonce(node common.Address) (*big.Int, error) {
+	cli, err := clientops.GetClient(hostops.HOST)
+	if err != nil {
+		fmt.Println("failed to dial geth", err)
+		return nil, err
+	}
+	defer cli.Close()
+
+	// ====== get contractAddr from db
+	op.OpenDB()
+	defer op.CloseDB()
+
+	// store cash address
+	byteContractAddr, err := op.OpDB.Get([]byte("contractAddr"), nil)
+	if err != nil {
+		fmt.Println("db get data error:", err)
+		return nil, err
+	}
+
+	AddressContract := common.HexToAddress(string(byteContractAddr))
+	// get contract instance from address
+	cashInstance, err2 := cash.NewCash(AddressContract, cli)
+	if err2 != nil {
+		fmt.Println("NewCash err: ", err2)
+		return nil, err2
+	}
+
+	bigNonce, err := cashInstance.GetNodeNonce(nil, node)
+	if err != nil {
+		fmt.Println("tx failed :", err)
+		return nil, err
+	}
+
+	fmt.Println()
+	fmt.Println("Node: ", node.String())
+	fmt.Println("Node nonce: ", bigNonce.String())
+
+	return bigNonce, nil
 }
