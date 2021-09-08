@@ -41,10 +41,9 @@ type User struct {
 
 // init user, need db open first
 func (user *User) Init() error {
-	user.DBfile = "./user.db"
 
+	user.DBfile = "./user.db"
 	user.OpenDB()
-	defer user.CloseDB()
 
 	//user.ContractAddress = ""
 
@@ -66,8 +65,6 @@ func (user *User) Init() error {
 
 // user get Cheque from operator
 func (user *User) BuyCheque() (*pb.PayCheque, error) {
-	user.OpenDB()
-	defer user.CloseDB()
 
 	if !global.RemoteExist {
 		fmt.Println("No remote peer exist, record one as operator.")
@@ -211,9 +208,6 @@ func (user *User) BuyCheque() (*pb.PayCheque, error) {
 // show paycheque info by key
 func (user *User) GetPayChequeByKey(key []byte) (*pb.PayCheque, error) {
 
-	user.OpenDB()
-	defer user.CloseDB()
-
 	msg, err := user.UserDB.Get(key, nil)
 	if err != nil {
 		log.Println("db.Get error:", err)
@@ -236,40 +230,28 @@ func (user *User) GetPayChequeByKey(key []byte) (*pb.PayCheque, error) {
 }
 
 //
-func (user *User) ShowPayChequeByID() error {
-
-	// show user's paycheque table
-	user.ListPayCheque()
-
-	fmt.Println("Input ID to show:")
-	var uID uint
-	fmt.Scanf("%d", &uID)
-	print.Printf100ms("-> You choosed %d\n", uID)
-
-	keyByte, err := user.IDtoKey(uID)
+func (user *User) GetPayChequeByID(id uint) (*pb.PayCheque, error) {
+	keyByte, err := user.IDtoKey(id)
 	if err != nil {
 		fmt.Println("ID to Key error: ", err)
-		return err
+		return nil, err
 	}
 
 	//utils.ShowPayChequeInfoByKey(keyByte)
-	PayCheque, err := user.GetPayChequeByKey(keyByte)
+	payCheque, err := user.GetPayChequeByKey(keyByte)
 	if err != nil {
 		fmt.Println("get paycheque error:", err)
-		return err
+		return nil, err
 	}
 
-	print.PrintPayCheque(PayCheque)
-
-	return nil
-
+	return payCheque, nil
 }
 
 // user list data in pay cheque db
 func (user *User) ListPayCheque() error {
 
 	// update userIndex and storageIndex
-	user.UpdatePayChequeIndex()
+	user.UpdateDBIndex()
 
 	// show table
 	table, err := gotable.Create("ID", "FROM", "TO", "VALUE", "PAYVALUE", "NONCE")
@@ -278,8 +260,6 @@ func (user *User) ListPayCheque() error {
 		return err
 	}
 	// show table
-	user.OpenDB()
-	defer user.CloseDB()
 
 	var id int = 0
 	for id < len(user.DBIndex) {
@@ -339,10 +319,7 @@ func (user *User) ListPayCheque() error {
 }
 
 // Update Index
-func (user *User) UpdatePayChequeIndex() {
-
-	user.OpenDB()
-	defer user.CloseDB()
+func (user *User) UpdateDBIndex() {
 
 	// clear index
 	user.DBIndex = user.DBIndex[0:0]
@@ -365,9 +342,6 @@ func (user *User) UpdatePayChequeIndex() {
 
 // user increase the pay value of paycheque in db by 'global.Increase'
 func (user *User) IncPayValueByKey(key []byte) error {
-
-	user.OpenDB()
-	defer user.CloseDB()
 
 	msg, err := user.UserDB.Get(key, nil)
 	if err != nil {
@@ -464,21 +438,14 @@ func (user *User) IncPayValueByKey(key []byte) error {
 }
 
 //
-func (user *User) SendOnePayChequeByID() error {
+func (user *User) SendPayChequeByID(id uint) error {
 	if !global.RemoteExist {
 		fmt.Println("No remote peer exist, record one as storage.")
 		return errors.New("no remote peer")
 	}
 
-	user.ListPayCheque()
-
-	print.Println100ms("-> Choose cheque ID to send.")
-	var uID uint
-	fmt.Scanf("%d", &uID)
-	print.Printf100ms("-> You choosed %d\n", uID)
-
 	// get key from id
-	keyByte, err := user.IDtoKey(uID)
+	keyByte, err := user.IDtoKey(id)
 	if err != nil {
 		fmt.Println("ID to Key error:", err)
 		return err
@@ -490,21 +457,14 @@ func (user *User) SendOnePayChequeByID() error {
 }
 
 //
-func (user *User) IncAndSendPayChequeByID() error {
+func (user *User) IncAndSendPayChequeByID(id uint) error {
 	if !global.RemoteExist {
 		fmt.Println("No remote peer exist, record one as storage.")
 		return errors.New("no remote peer")
 	}
 
-	user.ListPayCheque()
-
-	print.Println100ms("-> Choose cheque ID to send.")
-	var uID uint
-	fmt.Scanf("%d", &uID)
-	print.Printf100ms("-> You choosed %d\n", uID)
-
 	// get key from id
-	keyByte, err := user.IDtoKey(uID)
+	keyByte, err := user.IDtoKey(id)
 	if err != nil {
 		fmt.Println("ID to Key error:", err)
 		return err
@@ -527,9 +487,6 @@ func (user *User) IncAndSendPayChequeByID() error {
 
 //
 func (user *User) SendPayChequeByKey(key []byte) error {
-
-	user.OpenDB()
-	defer user.CloseDB()
 
 	print.Printf100ms("Opening stream to peerID: %v\n", global.Peerid)
 	s, err := hostops.HostInfo.NewStream(context.Background(), global.Peerid, "/2")
@@ -580,8 +537,6 @@ func (user *User) CloseDB() error {
 // clear db
 func (user *User) ClearDB() error {
 
-	user.OpenDB()
-
 	iter := user.UserDB.NewIterator(nil, nil)
 	for iter.Next() {
 		user.UserDB.Delete(iter.Key(), nil)
@@ -593,8 +548,7 @@ func (user *User) ClearDB() error {
 		return err
 	}
 
-	defer user.ListPayCheque()
-	defer user.CloseDB()
+	user.ListPayCheque()
 
 	return nil
 }
@@ -608,8 +562,6 @@ func (user *User) DeleteChequeByID() {
 	}
 
 	user.ListPayCheque()
-
-	user.OpenDB()
 
 	print.Println100ms("Input ID to delete:")
 	var uID uint
@@ -634,8 +586,7 @@ func (user *User) DeleteChequeByID() {
 	}
 	print.Printf100ms("delete ID %d success.\n", uID)
 
-	defer user.ListPayCheque()
-	defer user.CloseDB()
+	user.ListPayCheque()
 
 }
 

@@ -46,10 +46,9 @@ type Provider struct {
 
 // init provider, need db open first
 func (pro *Provider) Init() error {
-	pro.DBfile = "./provider.db"
 
+	pro.DBfile = "./provider.db"
 	pro.OpenDB()
-	defer pro.CloseDB()
 
 	//pro.ContractAddress = ""
 
@@ -75,14 +74,8 @@ func (pro *Provider) CallContract() error {
 	return nil
 }
 
-func (pro *Provider) ReceivePayChequeHandler(s network.Stream) error {
-	return nil
-}
-
 // Cmd2Handler - command 2 handler, run on storage, receive PayCheque from user and record to db
-func (pro *Provider) SendCheckHandler(s network.Stream) error {
-
-	pro.OpenDB()
+func (pro *Provider) RecievePayCheck(s network.Stream) error {
 
 	/*
 		// // Read data method 1
@@ -183,8 +176,7 @@ func (pro *Provider) SendCheckHandler(s network.Stream) error {
 		return err
 	}
 
-	defer pro.ListPayCheque()
-	defer pro.ProDB.Close()
+	pro.ListPayCheque()
 
 	print.PrintMenu()
 	print.Println100ms("\n> Intput target address and cmd: ")
@@ -214,8 +206,6 @@ func (pro *Provider) CloseDB() error {
 // clear db
 func (pro *Provider) ClearDB() error {
 
-	pro.OpenDB()
-
 	iter := pro.ProDB.NewIterator(nil, nil)
 	for iter.Next() {
 		pro.ProDB.Delete(iter.Key(), nil)
@@ -227,8 +217,7 @@ func (pro *Provider) ClearDB() error {
 		return err
 	}
 
-	defer pro.ListPayCheque()
-	defer pro.CloseDB()
+	pro.ListPayCheque()
 
 	return nil
 }
@@ -243,14 +232,12 @@ func (pro *Provider) DeleteChequeByID() error {
 
 	pro.ListPayCheque()
 
-	pro.OpenDB()
-
 	print.Println100ms("Input ID to delete:")
 	var uID uint
 	fmt.Scanf("%d", &uID)
 	if !(uID < uint(len(pro.DBIndex))) {
 		fmt.Println("Invalid input")
-		return errors.New("Invalid input")
+		return errors.New("invalid input")
 	}
 	if pro.DBIndex[uID] == "" {
 		fmt.Println("ID not exist")
@@ -269,8 +256,7 @@ func (pro *Provider) DeleteChequeByID() error {
 	}
 	print.Printf100ms("delete ID %d success.\n", uID)
 
-	defer pro.ListPayCheque()
-	defer pro.CloseDB()
+	pro.ListPayCheque()
 
 	return nil
 
@@ -289,8 +275,6 @@ func (pro *Provider) ListPayCheque() error {
 		return err
 	}
 	// show table
-	pro.OpenDB()
-	defer pro.CloseDB()
 
 	var id int = 0
 	for id < len(pro.DBIndex) {
@@ -352,9 +336,6 @@ func (pro *Provider) ListPayCheque() error {
 // Update Index
 func (pro *Provider) UpdatePayChequeIndex() {
 
-	pro.OpenDB()
-	defer pro.CloseDB()
-
 	// clear index
 	pro.DBIndex = pro.DBIndex[0:0]
 
@@ -414,9 +395,6 @@ func (pro *Provider) CallCashByID() error {
 	}
 
 	print.Printf100ms(("PayCheque key: %x\n"), keyByte)
-
-	pro.OpenDB()
-	defer pro.CloseDB()
 
 	// get paycheque
 	in, err2 := pro.ProDB.Get(keyByte, nil)

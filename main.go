@@ -5,9 +5,11 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math/big"
 	"math/rand"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -24,6 +26,7 @@ import (
 
 //
 func main() {
+
 	var Cancel context.CancelFunc
 	global.Ctx, Cancel = context.WithCancel(context.Background())
 	defer Cancel()
@@ -46,18 +49,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	//
 	app := &app.App{}
 	app.Init()
+	defer app.Exit()
 
 	// run listener
 	listenerDone := make(chan int)
 	go runListener(app, global.Ctx, hostops.HostInfo, port, listenerDone)
 	<-listenerDone //wait until runlistener complete
-
-	defer app.Op.CloseDB()
-	defer app.User.CloseDB()
-	defer app.Pro.CloseDB()
 
 	// menu
 	print.PrintMenu()
@@ -92,21 +91,31 @@ func main() {
 			}
 		// Get contract nonce
 		case "gn":
-			_, err = app.Op.GetContractNonce()
+			AddressTo := common.HexToAddress(app.Op.ToAddr)
+			//print.Printf100ms("address to :%s\n", AddressTo.String())
+
+			nonce, err := app.Op.GetNonceContract(AddressTo)
 			if err != nil {
-				fmt.Println("operator get contract error:", err)
+				fmt.Println("call get nonce error: ", err)
+				continue
 			}
+			fmt.Printf("nonce of node: \"%s\" is %s \n", AddressTo.String(), nonce.String())
+
 		case "re":
 			//execmd.ResetNonceInOperatorDB()
-			err = app.Op.ResetNonceInDB()
+			nonce := big.NewInt(0)
+			err = app.Op.SetNonceLocal(app.Op.ToAddr, nonce)
 			if err != nil {
 				fmt.Println("operator reset nonce error:", err)
 			}
 		case "sn":
-			err = app.Op.ShowNonceInDB()
+			nonce, err := app.Op.GetNonceLocal(app.Op.ToAddr)
 			if err != nil {
-				fmt.Println("operator show nonce error:", err)
+				fmt.Println("get nonce error:", err)
+				continue
 			}
+			fmt.Printf("local nonce of provider \"%s\" is: %s\n", app.Op.ToAddr, nonce.String())
+
 		// user get cheque from operator
 		case "g":
 			_, err = app.User.BuyCheque()
@@ -115,10 +124,19 @@ func main() {
 			}
 		// Send One PayCheque to storage
 		case "s":
-			err = app.User.SendOnePayChequeByID()
+			app.User.ListPayCheque()
+
+			print.Println100ms("-> Choose cheque ID to send.")
+			var id uint
+			fmt.Scanf("%d", &id)
+			print.Printf100ms("-> You choosed %d\n", id)
+			err := app.User.SendPayChequeByID(id)
 			if err != nil {
-				fmt.Println("user send paycheque error:", err)
+				fmt.Println("send pay cheque by id failed:", err)
 			}
+
+			fmt.Println("send pay cheque complete")
+
 		// list user's cheque db
 		case "lu":
 			err = app.User.ListPayCheque()
@@ -130,10 +148,18 @@ func main() {
 			app.User.DeleteChequeByID()
 		// Inc And Send a Cheque to storage
 		case "is":
-			err = app.User.IncAndSendPayChequeByID()
+			app.User.ListPayCheque()
+
+			print.Println100ms("-> Choose cheque ID to send.")
+			var id uint
+			fmt.Scanf("%d", &id)
+			print.Printf100ms("-> You choosed %d\n", id)
+			err := app.User.IncAndSendPayChequeByID(id)
 			if err != nil {
-				fmt.Println("user inc and send paycheque error:", err)
+				fmt.Println("inc and send pay cheque by id failed: ", err)
+				continue
 			}
+			fmt.Println("inc and send pay chque by id complete")
 		// list storage's cheque db
 		case "ls":
 			err = app.Pro.ListPayCheque()
@@ -168,10 +194,22 @@ func main() {
 				fmt.Println("provider clear db error:", err)
 			}
 		case "sh":
-			err = app.User.ShowPayChequeByID()
+			// show user's paycheque table
+			app.User.ListPayCheque()
+
+			fmt.Println("Input ID to show:")
+			var id uint
+			fmt.Scanf("%d", &id)
+			print.Printf100ms("-> You choosed %d\n", id)
+
+			payCheque, err := app.User.GetPayChequeByID(id)
 			if err != nil {
-				fmt.Println("user show paycheque error:", err)
+				fmt.Println("get pay cheque by id failed:", err)
+				continue
 			}
+
+			print.PrintPayCheque(payCheque)
+
 		default:
 			print.Printf100ms("invalid input.\n")
 		}
@@ -184,7 +222,7 @@ func runListener(app *app.App, ctx context.Context, ha host.Host, listenPort int
 	// executed handler when a stream opened.
 	ha.SetStreamHandler("/1", func(s network.Stream) {
 		print.Println100ms("--> Received command 1")
-		if err := app.Op.BuyChequeHandler(s); err != nil {
+		if err := app.Op.GenAndSendCheque(s); err != nil {
 			log.Println(err)
 			s.Reset()
 		}
@@ -195,7 +233,7 @@ func runListener(app *app.App, ctx context.Context, ha host.Host, listenPort int
 	// handler for cmd 2
 	ha.SetStreamHandler("/2", func(s network.Stream) {
 		print.Println100ms("--> Received command 2")
-		if err := app.Pro.SendCheckHandler(s); err != nil {
+		if err := app.Pro.RecievePayCheck(s); err != nil {
 			log.Println(err)
 			s.Reset()
 		}

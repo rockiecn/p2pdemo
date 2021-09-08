@@ -23,3 +23,9 @@ func (app *App) Init() {
 	app.Pro.Init()
 
 }
+
+func (app *App) Exit() {
+	app.Op.CloseDB()
+	app.User.CloseDB()
+	app.Pro.CloseDB()
+}

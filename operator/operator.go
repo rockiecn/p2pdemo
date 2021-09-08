@@ -17,6 +17,7 @@ import (
 
 	"github.com/rockiecn/p2pdemo/cash"
 	"github.com/rockiecn/p2pdemo/clientops"
+	"github.com/rockiecn/p2pdemo/db"
 	"github.com/rockiecn/p2pdemo/hostops"
 	"github.com/rockiecn/p2pdemo/pb"
 	"github.com/rockiecn/p2pdemo/print"
@@ -26,7 +27,6 @@ import (
 
 type Operator struct {
 	OpDB *leveldb.DB // provider -> nonce
-	//ContractAddress string      // contract address
 
 	DBfile string
 
@@ -36,14 +36,15 @@ type Operator struct {
 	TokenAddr string // token address
 	FromAddr  string // user
 	ToAddr    string // storage
+
+	db.DB // interface DB
 }
 
 // init operator, need db open first
 func (op *Operator) Init() error {
-	op.DBfile = "./operator.db"
 
+	op.DBfile = "./operator.db"
 	op.OpenDB()
-	defer op.CloseDB()
 
 	//op.ContractAddress = ""
 	op.OperatorAddr = "5B38Da6a701c568545dCfcB03FcB875f56beddC4"
@@ -83,9 +84,6 @@ func (op *Operator) CloseDB() error {
 
 // operator deploy contract
 func (op *Operator) DeployContract() (common.Address, error) {
-
-	op.OpenDB()
-	defer op.CloseDB()
 
 	var contractAddr common.Address
 
@@ -173,150 +171,30 @@ func (op *Operator) DeployContract() (common.Address, error) {
 	return contractAddr, nil
 }
 
-// operator generate a cheque
-func (op *Operator) GenerateCheque() (*pb.Cheque, error) {
-	return nil, nil
-}
-
-// operator send cheque to user
-func (op *Operator) SendCheque() (*pb.Cheque, error) {
-	return nil, nil
-}
-
 // get current provider nonce stored in db
-func (op *Operator) GetNonceLocal() (*big.Int, error) {
-	return nil, nil
-}
-
-// set a provider's nonce in db
-func (op *Operator) SetNonceLocal(string, *big.Int) error {
-	return nil
-}
-
-// called when an user connecting, generate and send a cheque to user
-func (op *Operator) BuyChequeHandler(s network.Stream) error {
-
-	op.OpenDB()
-	defer op.CloseDB()
-
-	fmt.Println("--> Construct and send Cheque...")
-
-	// construct Cheque
-	Cheque := &pb.Cheque{}
-	Cheque.Value = "100000000000000000000"   // Cheque 100
-	Cheque.TokenAddress = op.TokenAddr       // token address
-	Cheque.From = op.FromAddr                // user
-	Cheque.To = op.ToAddr                    // storage
-	Cheque.OperatorAddress = op.OperatorAddr // operator
-
-	// storage -> nonce
-	nonce, err := op.OpDB.Get([]byte(Cheque.To), nil)
-	if err != nil {
-		if err.Error() == "leveldb: not found" { // no nonce at all
-			op.OpDB.Put([]byte(Cheque.To), utils.Int64ToBytes(0), nil)
-		} else {
-			fmt.Println("operator db get nonce error: ", err)
-			return err
-		}
-	}
-
-	// increase nonce by 1
-	// byte to string
-	bigOne := big.NewInt(1)
-	bigNonce := big.NewInt(0)
-	bigNonce = bigNonce.SetBytes(nonce)
-	fmt.Println("bigNonce: ", bigNonce.String())
-	bigNonce = bigNonce.Add(bigNonce, bigOne)
-	fmt.Println("bigNonce: ", bigNonce.String())
-
-	// record nonce into db
-	err = op.OpDB.Put([]byte(Cheque.To), bigNonce.Bytes(), nil)
-	if err != nil {
-		fmt.Println("operator db put nonce error")
-		return err
-	}
-
-	//
-	Cheque.Nonce = bigNonce.String()
-
-	contractAddrByte, err := op.OpDB.Get([]byte("contractAddr"), nil)
-	if err != nil {
-		log.Println("!! get cash address error:", err)
-		return err
-	}
-
-	// contract address, delete prefix '0x'
-	contractAddrByte = contractAddrByte[2:]
-	Cheque.ContractAddress = string(contractAddrByte) // contract address
-
-	// if global.DEBUG {
-	// 	print.Printf100ms("sigByte:%x\n", sigByte)
-	// 	print.Printf100ms("contractAddr:%s\n", Cheque.ContractAddress)
-	// 	print.Printf100ms("ChequeMarshaled:%x\n", ChequeMarshaled)
-	// }
-
-	// serialize
-	ChequeMarshaled, err := proto.Marshal(Cheque)
-	if err != nil {
-		log.Fatalln("Failed to encode PayCheque:", err)
-	}
-
-	// construct Cheque message: sig(65 bytes) | data
-	fmt.Println("-> constructing msg")
-
-	// calc cheque hash
-	hash := utils.CalcChequeHash(Cheque)
-
-	fmt.Printf("Cheque send, hash: %x\n", hash)
-
-	// sign Cheque by operator
-	sigByte, err := sigapi.Sign(hash, []byte(op.OperatorSK))
-	if err != nil {
-		log.Fatal("sign error:", err)
-	}
-
-	// sig(65) | cheque
-	var msg = []byte{}
-	msg = utils.MergeSlice(sigByte, ChequeMarshaled)
-
-	fmt.Println("-> sending msg")
-	// send msg
-	_, err = s.Write([]byte(msg))
-	if err != nil {
-		panic("stream write error")
-	}
-
-	fmt.Println("\n> Intput target cmd: ")
-
-	return err
-}
-
-// get contract nonce, used by operator
-func (op *Operator) GetContractNonce() (*big.Int, error) {
-
-	AddressTo := common.HexToAddress(op.ToAddr)
-	//print.Printf100ms("address to :%s\n", AddressTo.String())
-
-	bigNonce, err := op.CallGetNodeNonce(AddressTo)
-	if err != nil {
-		fmt.Println("call get nonce error: ", err)
-		return nil, err
-	}
-
-	return bigNonce, nil
-}
-
-// set nonce of operator db to 0.
-func (op *Operator) ResetNonceInDB() error {
-
-	op.OpenDB()
-	defer op.CloseDB()
+func (op *Operator) GetNonceLocal(nodeAddr string) (*big.Int, error) {
 
 	//byteNonce := utils.Int64ToBytes(0)
 	bigNonce := big.NewInt(0)
 
 	// storage -> nonce
-	err := op.OpDB.Put([]byte(op.ToAddr), bigNonce.Bytes(), nil)
+	byteNonce, err := op.OpDB.Get([]byte(nodeAddr), nil)
+	if err != nil {
+		fmt.Println("get nonce error: ", err)
+		return nil, err
+	}
+	bigNonce.SetBytes(byteNonce)
+
+	return bigNonce, nil
+}
+
+// set a provider's nonce in db
+func (op *Operator) SetNonceLocal(nodeAddr string, nonce *big.Int) error {
+	op.OpenDB()
+	defer op.CloseDB()
+
+	// storage -> nonce
+	err := op.OpDB.Put([]byte(nodeAddr), nonce.Bytes(), nil)
 	if err != nil {
 		fmt.Println("reset nonce error: ", err)
 		return err
@@ -325,28 +203,8 @@ func (op *Operator) ResetNonceInDB() error {
 	return nil
 }
 
-func (op *Operator) ShowNonceInDB() error {
-
-	op.OpenDB()
-	defer op.CloseDB()
-
-	//byteNonce := utils.Int64ToBytes(0)
-	bigNonce := big.NewInt(0)
-
-	// storage -> nonce
-	byteNonce, err := op.OpDB.Get([]byte(op.ToAddr), nil)
-	if err != nil {
-		fmt.Println("get nonce error: ", err)
-		return err
-	}
-	bigNonce.SetBytes(byteNonce)
-	fmt.Println("nonce:", bigNonce.String())
-
-	return nil
-}
-
 // call get contract node nonce
-func (op *Operator) CallGetNodeNonce(node common.Address) (*big.Int, error) {
+func (op *Operator) GetNonceContract(node common.Address) (*big.Int, error) {
 	cli, err := clientops.GetClient(hostops.HOST)
 	if err != nil {
 		fmt.Println("failed to dial geth", err)
@@ -355,8 +213,6 @@ func (op *Operator) CallGetNodeNonce(node common.Address) (*big.Int, error) {
 	defer cli.Close()
 
 	// ====== get contractAddr from db
-	op.OpenDB()
-	defer op.CloseDB()
 
 	// store cash address
 	byteContractAddr, err := op.OpDB.Get([]byte("contractAddr"), nil)
@@ -384,4 +240,126 @@ func (op *Operator) CallGetNodeNonce(node common.Address) (*big.Int, error) {
 	fmt.Println("Node nonce: ", bigNonce.String())
 
 	return bigNonce, nil
+}
+
+// operator generate a cheque
+func (op *Operator) GenerateCheque() (*pb.Cheque, error) {
+
+	fmt.Println("--> Construct and send Cheque...")
+
+	// construct Cheque
+
+	cheque := pb.Cheque{}
+
+	cheque.Value = "100000000000000000000"   // Cheque 100
+	cheque.TokenAddress = op.TokenAddr       // token address
+	cheque.From = op.FromAddr                // user
+	cheque.To = op.ToAddr                    // storage
+	cheque.OperatorAddress = op.OperatorAddr // operator
+
+	// storage -> nonce
+	nonce, err := op.OpDB.Get([]byte(cheque.To), nil)
+	if err != nil {
+		if err.Error() == "leveldb: not found" { // no nonce at all
+			op.OpDB.Put([]byte(cheque.To), utils.Int64ToBytes(0), nil)
+		} else {
+			fmt.Println("operator db get nonce error: ", err)
+			return nil, err
+		}
+	}
+
+	// increase nonce by 1
+	// byte to string
+	bigOne := big.NewInt(1)
+	bigNonce := big.NewInt(0)
+	bigNonce = bigNonce.SetBytes(nonce)
+	fmt.Println("bigNonce: ", bigNonce.String())
+	bigNonce = bigNonce.Add(bigNonce, bigOne)
+	fmt.Println("bigNonce: ", bigNonce.String())
+
+	// record nonce into db
+	err = op.OpDB.Put([]byte(cheque.To), bigNonce.Bytes(), nil)
+	if err != nil {
+		fmt.Println("operator db put nonce error")
+		return nil, err
+	}
+
+	//
+	cheque.Nonce = bigNonce.String()
+
+	contractAddrByte, err := op.OpDB.Get([]byte("contractAddr"), nil)
+	if err != nil {
+		log.Println("!! get cash address error:", err)
+		return nil, err
+	}
+
+	// contract address, delete prefix '0x'
+	contractAddrByte = contractAddrByte[2:]
+
+	cheque.ContractAddress = string(contractAddrByte) // contract address
+
+	// if global.DEBUG {
+	// 	print.Printf100ms("sigByte:%x\n", sigByte)
+	// 	print.Printf100ms("contractAddr:%s\n", cheque.ContractAddress)
+	// 	print.Printf100ms("cheque:%x\n", ChequeMarshaled)
+	// }
+
+	return &cheque, nil
+}
+
+// operator send cheque to user
+func (op *Operator) SendCheque(s network.Stream, cheque *pb.Cheque) error {
+	// serialize
+	ChequeMarshaled, err := proto.Marshal(cheque)
+	if err != nil {
+		fmt.Println("Failed to encode PayCheque:", err)
+		return err
+	}
+
+	// construct Cheque message: sig(65 bytes) | data
+	fmt.Println("-> constructing msg")
+
+	// calc cheque hash
+	hash := utils.CalcChequeHash(cheque)
+
+	fmt.Printf("Cheque send, hash: %x\n", hash)
+
+	// sign Cheque by operator
+	sigByte, err := sigapi.Sign(hash, []byte(op.OperatorSK))
+	if err != nil {
+		log.Fatal("sign error:", err)
+	}
+
+	// sig(65) | cheque
+	var msg = []byte{}
+	msg = utils.MergeSlice(sigByte, ChequeMarshaled)
+
+	fmt.Println("-> sending msg")
+	// send msg
+	_, err = s.Write([]byte(msg))
+	if err != nil {
+		panic("stream write error")
+	}
+
+	return nil
+}
+
+// called when an user connecting, generate and send a cheque to user
+func (op *Operator) GenAndSendCheque(s network.Stream) error {
+
+	cheque, err := op.GenerateCheque()
+	if err != nil {
+		fmt.Println("generate cheque error:", err)
+		return err
+	}
+
+	err = op.SendCheque(s, cheque)
+	if err != nil {
+		fmt.Println("send cheque error:", err)
+		return err
+	}
+
+	fmt.Println("\n> Intput target cmd: ")
+
+	return nil
 }
