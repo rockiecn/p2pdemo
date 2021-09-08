@@ -6,3 +6,6 @@ storage_data.db
 operator_data.db
 paycheque.db
 storage_paycheque.db
+operator.db
+user.db
+provider.db
