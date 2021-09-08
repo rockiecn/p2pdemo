@@ -29,7 +29,6 @@ import (
 
 type Provider struct {
 	ProDB *leveldb.DB // provider -> nonce
-	//ContractAddress string      // contract address
 
 	DBfile  string
 	DBIndex []string

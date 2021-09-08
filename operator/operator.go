@@ -46,7 +46,6 @@ func (op *Operator) Init() error {
 	op.DBfile = "./operator.db"
 	op.OpenDB()
 
-	//op.ContractAddress = ""
 	op.OperatorAddr = "5B38Da6a701c568545dCfcB03FcB875f56beddC4"
 	op.OperatorSK = "503f38a9c967ed597e47fe25643985f032b072db8075426a92110f82df48dfcb"
 
@@ -268,14 +267,13 @@ func (op *Operator) GenerateCheque() (*pb.Cheque, error) {
 		}
 	}
 
-	// increase nonce by 1
-	// byte to string
-	bigOne := big.NewInt(1)
 	bigNonce := big.NewInt(0)
 	bigNonce = bigNonce.SetBytes(nonce)
-	fmt.Println("bigNonce: ", bigNonce.String())
+	cheque.Nonce = bigNonce.String()
+
+	// nonce increase 1
+	bigOne := big.NewInt(1)
 	bigNonce = bigNonce.Add(bigNonce, bigOne)
-	fmt.Println("bigNonce: ", bigNonce.String())
 
 	// record nonce into db
 	err = op.OpDB.Put([]byte(cheque.To), bigNonce.Bytes(), nil)
@@ -285,7 +283,6 @@ func (op *Operator) GenerateCheque() (*pb.Cheque, error) {
 	}
 
 	//
-	cheque.Nonce = bigNonce.String()
 
 	contractAddrByte, err := op.OpDB.Get([]byte("contractAddr"), nil)
 	if err != nil {

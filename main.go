@@ -49,7 +49,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	app := &app.App{}
+	app := new(app.App)
 	app.Init()
 	defer app.Exit()
 

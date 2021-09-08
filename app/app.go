@@ -7,19 +7,19 @@ import (
 )
 
 type App struct {
-	Op   operator.Operator
-	User user.User
-	Pro  provider.Provider
+	Op   *operator.Operator
+	User *user.User
+	Pro  *provider.Provider
 }
 
 func (app *App) Init() {
-	app.Op = operator.Operator{}
+	app.Op = new(operator.Operator)
 	app.Op.Init()
 
-	app.User = user.User{}
+	app.User = new(user.User)
 	app.User.Init()
 
-	app.Pro = provider.Provider{}
+	app.Pro = new(provider.Provider)
 	app.Pro.Init()
 
 }
